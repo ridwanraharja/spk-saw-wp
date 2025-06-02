@@ -1,8 +1,8 @@
 import React from "react";
-import { DashboardPage } from "./pages/DashboardPage";
+import { Router } from "./router/Router";
 
 function App() {
-  return <DashboardPage />;
+  return <Router />;
 }
 
 export default App;
