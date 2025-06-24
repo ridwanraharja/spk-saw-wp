@@ -1,18 +1,22 @@
-import { Sequelize } from "sequelize";
-import dotenv from "dotenv";
+import { PrismaClient } from "@prisma/client";
 
-dotenv.config();
+declare global {
+  var prisma: PrismaClient | undefined;
+}
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME || "spk_saw_wp",
-  process.env.DB_USER || "postgres",
-  process.env.DB_PASSWORD || "postgres",
-  {
-    host: process.env.DB_HOST || "localhost",
-    dialect: "postgres",
-    port: parseInt(process.env.DB_PORT || "5432", 10),
-    logging: false,
-  }
-);
+export const prisma =
+  globalThis.prisma ||
+  new PrismaClient({
+    log: ["query", "info", "warn", "error"],
+  });
 
-export default sequelize;
+if (process.env.NODE_ENV !== "production") {
+  globalThis.prisma = prisma;
+}
+
+// Graceful shutdown
+process.on("beforeExit", async () => {
+  await prisma.$disconnect();
+});
+
+export default prisma;
