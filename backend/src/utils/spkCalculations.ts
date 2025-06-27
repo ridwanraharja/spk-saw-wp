@@ -92,13 +92,13 @@ export class SPKCalculator {
       };
     });
 
-    // const totalSi = scores.reduce((sum, score) => sum + score.score!, 0);
+    // Step 3: Calculate Vi values (preference values)
+    const totalSi = scores.reduce((sum, score) => sum + score.score, 0);
+    scores.forEach((score) => {
+      score.score = score.score / totalSi;
+    });
 
-    // scores.forEach((score) => {
-    //   score.viValue = score.score! / totalSi;
-    // });
-
-    // Step 3: Sort by score (descending) and assign ranks
+    // Step 4: Sort by score (descending) and assign ranks
     scores.sort((a, b) => b.score - a.score);
     scores.forEach((result, index) => {
       result.rank = index + 1;

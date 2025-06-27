@@ -35,6 +35,8 @@ export const calculateSAW = (
 
   // Step 4: Create results with ranking
   const results: SAWResult[] = alternatives.map((alt, i) => ({
+    id: `saw-${alt.id}-${Date.now()}`,
+    spkId: `spk-${Date.now()}`,
     alternativeId: alt.id,
     score: preferenceValues[i],
     rank: 0, // Will be set after sorting
@@ -53,43 +55,54 @@ export const calculateWP = (
   criteria: Criterion[],
   alternatives: Alternative[]
 ): WPResult[] => {
-  // Step 1: Normalize weights
+  // Step 1: Calculate relative weights (same as backend)
   const totalWeight = criteria.reduce((sum, crit) => sum + crit.weight, 0);
-  const normalizedWeights = criteria.map((crit) => crit.weight / totalWeight);
+  const relativeWeights = criteria.map((crit) => crit.weight / totalWeight);
 
-  // Step 2: Adjust weights for cost criteria (negative for WP method)
-  const adjustedWeights = criteria.map((crit, i) =>
-    crit.type === "cost" ? -normalizedWeights[i] : normalizedWeights[i]
-  );
+  // Step 2: Calculate Si values (same as backend)
+  const scores = alternatives.map((alternative) => {
+    let siValue = 1;
 
-  // Step 3: Calculate S values (vector S)
-  const sValues = alternatives.map((alt) => {
-    let s = 1;
-    criteria.forEach((crit, i) => {
-      const value = alt.values[crit.id] || 0;
+    relativeWeights.forEach((relativeWeight, index) => {
+      const criterion = criteria[index];
+      const value = alternative.values[criterion.id] || 0;
+
       if (value > 0) {
-        s *= Math.pow(value, adjustedWeights[i]);
+        if (criterion.type === "benefit") {
+          siValue *= Math.pow(value, relativeWeight);
+        } else {
+          siValue *= Math.pow(1 / value, relativeWeight);
+        }
       }
     });
-    return s;
+
+    return {
+      alternativeId: alternative.id,
+      score: siValue,
+      rank: 0,
+    };
   });
 
-  // Step 4: Calculate V values (preference values)
-  const totalS = sValues.reduce((sum, s) => sum + s, 0);
-  const vValues = sValues.map((s) => (totalS > 0 ? s / totalS : 0));
+  // Step 3: Calculate Vi values (preference values) - same as backend
+  const totalSi = scores.reduce((sum, score) => sum + score.score, 0);
+  scores.forEach((score) => {
+    score.score = score.score / totalSi;
+  });
 
-  // Step 5: Create results with ranking
-  const results: WPResult[] = alternatives.map((alt, i) => ({
-    alternativeId: alt.id,
-    score: vValues[i],
-    rank: 0, // Will be set after sorting
+  // Step 4: Sort by score (descending) and assign ranks (same as backend)
+  scores.sort((a, b) => b.score - a.score);
+  scores.forEach((result, index) => {
+    result.rank = index + 1;
+  });
+
+  // Step 5: Create results with proper types
+  const results: WPResult[] = scores.map((score) => ({
+    id: `wp-${score.alternativeId}-${Date.now()}`,
+    spkId: `spk-${Date.now()}`,
+    alternativeId: score.alternativeId,
+    score: score.score,
+    rank: score.rank,
   }));
-
-  // Sort by score descending and assign ranks
-  results.sort((a, b) => b.score - a.score);
-  results.forEach((result, i) => {
-    result.rank = i + 1;
-  });
 
   return results;
 };
