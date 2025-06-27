@@ -88,9 +88,15 @@ export class SPKCalculator {
         alternativeId: alternative.id,
         alternativeName: alternative.name,
         score: siValue,
-        rank: 0, // Will be assigned after sorting
+        rank: 0,
       };
     });
+
+    // const totalSi = scores.reduce((sum, score) => sum + score.score!, 0);
+
+    // scores.forEach((score) => {
+    //   score.viValue = score.score! / totalSi;
+    // });
 
     // Step 3: Sort by score (descending) and assign ranks
     scores.sort((a, b) => b.score - a.score);

@@ -1,81 +1,120 @@
-
-import React from 'react';
-import { Criterion, Alternative, SAWResult, WPResult } from '@/pages/Index';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import React from "react";
+import { SAWResult, WPResult } from "@/lib/api";
+import { Criterion, Alternative } from "@/pages/Index";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface RankingAnalysisProps {
   criteria: Criterion[];
   alternatives: Alternative[];
   sawResults: SAWResult[];
   wpResults: WPResult[];
-  method: 'SAW' | 'WP';
+  method: "SAW" | "WP";
 }
+
+// Extended type to handle both form and API formats
+interface ExtendedAlternative extends Alternative {
+  alternativeValues?: Array<{
+    id: string;
+    alternativeId: string;
+    criterionId: string;
+    value: number;
+    criterion?: unknown;
+  }>;
+}
+
+// Utility function to get alternative value for a criterion
+const getAlternativeValue = (
+  alternative: Alternative,
+  criterionId: string
+): number => {
+  // If alternative has values object (form format)
+  if (alternative.values && typeof alternative.values === "object") {
+    return alternative.values[criterionId] || 0;
+  }
+
+  // If alternative has alternativeValues array (API format)
+  const extendedAlt = alternative as ExtendedAlternative;
+  if (
+    extendedAlt.alternativeValues &&
+    Array.isArray(extendedAlt.alternativeValues)
+  ) {
+    const altValue = extendedAlt.alternativeValues.find(
+      (av) => av.criterionId === criterionId
+    );
+    return altValue ? altValue.value : 0;
+  }
+
+  return 0;
+};
 
 export const RankingAnalysis: React.FC<RankingAnalysisProps> = ({
   criteria,
   alternatives,
   sawResults,
   wpResults,
-  method
+  method,
 }) => {
-  const results = method === 'SAW' ? sawResults : wpResults;
+  const results = method === "SAW" ? sawResults : wpResults;
 
   const getAlternativeAnalysis = (alternativeId: string) => {
-    const alternative = alternatives.find(alt => alt.id === alternativeId);
-    const result = results.find(r => r.alternativeId === alternativeId);
-    
+    const alternative = alternatives.find((alt) => alt.id === alternativeId);
+    const result = results.find((r) => r.alternativeId === alternativeId);
+
     if (!alternative || !result) return null;
 
     // Analyze performance in each criterion
-    const criteriaAnalysis = criteria.map(criterion => {
-      const value = alternative.values[criterion.id] || 0;
-      const allValues = alternatives.map(alt => alt.values[criterion.id] || 0);
+    const criteriaAnalysis = criteria.map((criterion) => {
+      const value = getAlternativeValue(alternative, criterion.id);
+      const allValues = alternatives.map((alt) =>
+        getAlternativeValue(alt, criterion.id)
+      );
       const maxValue = Math.max(...allValues);
       const minValue = Math.min(...allValues);
-      const avgValue = allValues.reduce((sum, val) => sum + val, 0) / allValues.length;
-      
-      let performance: 'excellent' | 'good' | 'average' | 'poor';
+      const avgValue =
+        allValues.reduce((sum, val) => sum + val, 0) / allValues.length;
+
+      let performance: "excellent" | "good" | "average" | "poor";
       let icon;
       let color;
 
-      if (criterion.type === 'benefit') {
+      if (criterion.type === "benefit") {
         if (value >= maxValue * 0.9) {
-          performance = 'excellent';
+          performance = "excellent";
           icon = <TrendingUp className="h-4 w-4" />;
-          color = 'bg-green-100 text-green-800';
+          color = "bg-green-100 text-green-800";
         } else if (value >= avgValue) {
-          performance = 'good';
+          performance = "good";
           icon = <TrendingUp className="h-4 w-4" />;
-          color = 'bg-blue-100 text-blue-800';
+          color = "bg-blue-100 text-blue-800";
         } else if (value >= minValue * 1.1) {
-          performance = 'average';
+          performance = "average";
           icon = <Minus className="h-4 w-4" />;
-          color = 'bg-yellow-100 text-yellow-800';
+          color = "bg-yellow-100 text-yellow-800";
         } else {
-          performance = 'poor';
+          performance = "poor";
           icon = <TrendingDown className="h-4 w-4" />;
-          color = 'bg-red-100 text-red-800';
+          color = "bg-red-100 text-red-800";
         }
       } else {
         // For cost criteria, lower is better
         if (value <= minValue * 1.1) {
-          performance = 'excellent';
+          performance = "excellent";
           icon = <TrendingUp className="h-4 w-4" />;
-          color = 'bg-green-100 text-green-800';
+          color = "bg-green-100 text-green-800";
         } else if (value <= avgValue) {
-          performance = 'good';
+          performance = "good";
           icon = <TrendingUp className="h-4 w-4" />;
-          color = 'bg-blue-100 text-blue-800';
+          color = "bg-blue-100 text-blue-800";
         } else if (value <= maxValue * 0.9) {
-          performance = 'average';
+          performance = "average";
           icon = <Minus className="h-4 w-4" />;
-          color = 'bg-yellow-100 text-yellow-800';
+          color = "bg-yellow-100 text-yellow-800";
         } else {
-          performance = 'poor';
+          performance = "poor";
           icon = <TrendingDown className="h-4 w-4" />;
-          color = 'bg-red-100 text-red-800';
+          color = "bg-red-100 text-red-800";
         }
       }
 
@@ -87,17 +126,21 @@ export const RankingAnalysis: React.FC<RankingAnalysisProps> = ({
         color,
         weight: criterion.weight,
         isHighest: value === maxValue,
-        isLowest: value === minValue
+        isLowest: value === minValue,
       };
     });
 
     // Find strongest and weakest points
-    const strengths = criteriaAnalysis.filter(c => 
-      c.performance === 'excellent' || (c.performance === 'good' && c.weight > 0.15)
+    const strengths = criteriaAnalysis.filter(
+      (c) =>
+        c.performance === "excellent" ||
+        (c.performance === "good" && c.weight > 0.15)
     );
-    
-    const weaknesses = criteriaAnalysis.filter(c => 
-      c.performance === 'poor' || (c.performance === 'average' && c.weight > 0.15)
+
+    const weaknesses = criteriaAnalysis.filter(
+      (c) =>
+        c.performance === "poor" ||
+        (c.performance === "average" && c.weight > 0.15)
     );
 
     return {
@@ -105,36 +148,50 @@ export const RankingAnalysis: React.FC<RankingAnalysisProps> = ({
       result,
       criteriaAnalysis,
       strengths,
-      weaknesses
+      weaknesses,
     };
   };
 
   const getPerformanceText = (performance: string, criterionType: string) => {
-    if (criterionType === 'benefit') {
+    if (criterionType === "benefit") {
       switch (performance) {
-        case 'excellent': return 'Sangat Tinggi';
-        case 'good': return 'Tinggi';
-        case 'average': return 'Sedang';
-        case 'poor': return 'Rendah';
-        default: return 'Sedang';
+        case "excellent":
+          return "Sangat Tinggi";
+        case "good":
+          return "Tinggi";
+        case "average":
+          return "Sedang";
+        case "poor":
+          return "Rendah";
+        default:
+          return "Sedang";
       }
     } else {
       switch (performance) {
-        case 'excellent': return 'Sangat Rendah';
-        case 'good': return 'Rendah';
-        case 'average': return 'Sedang';
-        case 'poor': return 'Tinggi';
-        default: return 'Sedang';
+        case "excellent":
+          return "Sangat Rendah";
+        case "good":
+          return "Rendah";
+        case "average":
+          return "Sedang";
+        case "poor":
+          return "Tinggi";
+        default:
+          return "Sedang";
       }
     }
   };
 
   const getRankingReason = (rank: number) => {
     switch (rank) {
-      case 1: return 'Peringkat 1 karena memiliki skor tertinggi';
-      case 2: return 'Peringkat 2 dengan skor yang baik';
-      case 3: return 'Peringkat 3 dengan skor cukup baik';
-      default: return `Peringkat ${rank} dengan skor yang perlu ditingkatkan`;
+      case 1:
+        return "Peringkat 1 karena memiliki skor tertinggi";
+      case 2:
+        return "Peringkat 2 dengan skor yang baik";
+      case 3:
+        return "Peringkat 3 dengan skor cukup baik";
+      default:
+        return `Peringkat ${rank} dengan skor yang perlu ditingkatkan`;
     }
   };
 
@@ -162,7 +219,8 @@ export const RankingAnalysis: React.FC<RankingAnalysisProps> = ({
                     {analysis.alternative.name}
                   </h4>
                   <p className="text-sm text-slate-600">
-                    {getRankingReason(result.rank)} (Skor: {result.score.toFixed(4)})
+                    {getRankingReason(result.rank)} (Skor:{" "}
+                    {result.score.toFixed(4)})
                   </p>
                 </div>
                 <Badge variant="outline" className="font-semibold">
@@ -183,9 +241,15 @@ export const RankingAnalysis: React.FC<RankingAnalysisProps> = ({
                         className={`${strength.color} flex items-center gap-1`}
                       >
                         {strength.icon}
-                        {strength.criterion.name}: {getPerformanceText(strength.performance, strength.criterion.type)}
-                        {strength.isHighest && ' (Tertinggi)'}
-                        {strength.isLowest && strength.criterion.type === 'cost' && ' (Terendah)'}
+                        {strength.criterion.name}:{" "}
+                        {getPerformanceText(
+                          strength.performance,
+                          strength.criterion.type
+                        )}
+                        {strength.isHighest && " (Tertinggi)"}
+                        {strength.isLowest &&
+                          strength.criterion.type === "cost" &&
+                          " (Terendah)"}
                       </Badge>
                     ))}
                   </div>
@@ -205,7 +269,11 @@ export const RankingAnalysis: React.FC<RankingAnalysisProps> = ({
                         className={`${weakness.color} flex items-center gap-1`}
                       >
                         {weakness.icon}
-                        {weakness.criterion.name}: {getPerformanceText(weakness.performance, weakness.criterion.type)}
+                        {weakness.criterion.name}:{" "}
+                        {getPerformanceText(
+                          weakness.performance,
+                          weakness.criterion.type
+                        )}
                       </Badge>
                     ))}
                   </div>
@@ -219,18 +287,30 @@ export const RankingAnalysis: React.FC<RankingAnalysisProps> = ({
                 </h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {analysis.criteriaAnalysis.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-slate-50 rounded"
+                    >
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{item.criterion.name}</span>
+                        <span className="text-sm font-medium">
+                          {item.criterion.name}
+                        </span>
                         <Badge variant="outline" className="text-xs">
                           Bobot: {(item.weight * 100).toFixed(0)}%
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-600">{item.value}</span>
-                        <Badge className={`${item.color} text-xs flex items-center gap-1`}>
+                        <span className="text-sm text-slate-600">
+                          {item.value}
+                        </span>
+                        <Badge
+                          className={`${item.color} text-xs flex items-center gap-1`}
+                        >
                           {item.icon}
-                          {getPerformanceText(item.performance, item.criterion.type)}
+                          {getPerformanceText(
+                            item.performance,
+                            item.criterion.type
+                          )}
                         </Badge>
                       </div>
                     </div>

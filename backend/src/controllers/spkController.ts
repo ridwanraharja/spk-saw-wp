@@ -12,10 +12,66 @@ export class SPKController {
       const userId = req.user?.userId;
       const { title, criteria, alternatives } = req.body;
 
-      // Validate input data
+      // Generate IDs for criteria first to ensure validation can work properly
+      const criteriaWithIds = criteria.map(
+        (criterion: {
+          id?: string;
+          name: string;
+          weight: number;
+          type: "benefit" | "cost";
+        }) => ({
+          ...criterion,
+          id: criterion.id || uuidv4(),
+        })
+      );
+
+      // Create a map of criterion names to IDs for alternative values processing
+      const criterionNameToId = new Map<string, string>();
+      criteriaWithIds.forEach(
+        (criterion: {
+          id: string;
+          name: string;
+          weight: number;
+          type: "benefit" | "cost";
+        }) => {
+          criterionNameToId.set(criterion.name, criterion.id);
+        }
+      );
+
+      // Transform alternatives to use criterion IDs instead of names in values
+      const alternativesWithIds = alternatives.map(
+        (alternative: {
+          id?: string;
+          name: string;
+          values: { [key: string]: number };
+        }) => {
+          const transformedValues: { [criterionId: string]: number } = {};
+
+          // If values are keyed by criterion names, convert to IDs
+          if (alternative.values && typeof alternative.values === "object") {
+            Object.entries(alternative.values).forEach(([key, value]) => {
+              const criterionId = criterionNameToId.get(key);
+              if (criterionId) {
+                transformedValues[criterionId] = value as number;
+              } else {
+                // If key is already an ID, use it directly
+                transformedValues[key] = value as number;
+              }
+            });
+          }
+
+          return {
+            ...alternative,
+            id: alternative.id || uuidv4(),
+            values: transformedValues,
+          };
+        }
+      );
+
+      // Validate input data with properly formatted data
       const validation = SPKCalculator.validateInputData(
-        criteria,
-        alternatives
+        criteriaWithIds,
+        alternativesWithIds
       );
       if (!validation.isValid) {
         res.status(400).json({
@@ -26,9 +82,15 @@ export class SPKController {
         return;
       }
 
-      // Calculate results
-      const sawResults = SPKCalculator.calculateSAW(criteria, alternatives);
-      const wpResults = SPKCalculator.calculateWP(criteria, alternatives);
+      // Calculate results using the transformed data
+      const sawResults = SPKCalculator.calculateSAW(
+        criteriaWithIds,
+        alternativesWithIds
+      );
+      const wpResults = SPKCalculator.calculateWP(
+        criteriaWithIds,
+        alternativesWithIds
+      );
 
       // Start transaction
       const result = await prisma.$transaction(async (tx) => {
@@ -40,43 +102,51 @@ export class SPKController {
           },
         });
 
-        // Create criteria
+        // Create criteria using the pre-generated IDs
         const createdCriteria = await Promise.all(
-          criteria.map((criterion: any) =>
-            tx.criterion.create({
-              data: {
-                id: criterion.id || uuidv4(),
-                spkId: spkRecord.id,
-                name: criterion.name,
-                weight: criterion.weight,
-                type: criterion.type,
-              },
-            })
+          criteriaWithIds.map(
+            (criterion: {
+              id: string;
+              name: string;
+              weight: number;
+              type: "benefit" | "cost";
+            }) =>
+              tx.criterion.create({
+                data: {
+                  id: criterion.id,
+                  spkId: spkRecord.id,
+                  name: criterion.name,
+                  weight: criterion.weight,
+                  type: criterion.type,
+                },
+              })
           )
         );
 
-        // Create alternatives
+        // Create alternatives using the pre-generated IDs
         const createdAlternatives = await Promise.all(
-          alternatives.map((alternative: any) =>
-            tx.alternative.create({
-              data: {
-                id: alternative.id || uuidv4(),
-                spkId: spkRecord.id,
-                name: alternative.name,
-              },
-            })
+          alternativesWithIds.map(
+            (alternative: {
+              id: string;
+              name: string;
+              values: { [key: string]: number };
+            }) =>
+              tx.alternative.create({
+                data: {
+                  id: alternative.id,
+                  spkId: spkRecord.id,
+                  name: alternative.name,
+                },
+              })
           )
         );
 
-        // Create alternative values
+        // Create alternative values using the transformed values with criterion IDs
         const alternativeValues = [];
-        for (const alternative of alternatives) {
+        for (const alternative of alternativesWithIds) {
           for (const criterionId of Object.keys(alternative.values)) {
             alternativeValues.push({
-              alternativeId:
-                alternative.id ||
-                createdAlternatives.find((a) => a.name === alternative.name)
-                  ?.id,
+              alternativeId: alternative.id,
               criterionId: criterionId,
               value: alternative.values[criterionId],
             });
@@ -253,10 +323,69 @@ export class SPKController {
       }
 
       // Validate input data if criteria and alternatives are provided
+      let criteriaWithIds: any = criteria;
+      let alternativesWithIds: any = alternatives;
+
       if (criteria && alternatives) {
+        // Generate IDs for criteria first to ensure validation can work properly
+        criteriaWithIds = criteria.map(
+          (criterion: {
+            id?: string;
+            name: string;
+            weight: number;
+            type: "benefit" | "cost";
+          }) => ({
+            ...criterion,
+            id: criterion.id || uuidv4(),
+          })
+        );
+
+        // Create a map of criterion names to IDs for alternative values processing
+        const criterionNameToId = new Map<string, string>();
+        criteriaWithIds.forEach(
+          (criterion: {
+            id: string;
+            name: string;
+            weight: number;
+            type: "benefit" | "cost";
+          }) => {
+            criterionNameToId.set(criterion.name, criterion.id);
+          }
+        );
+
+        // Transform alternatives to use criterion IDs instead of names in values
+        alternativesWithIds = alternatives.map(
+          (alternative: {
+            id?: string;
+            name: string;
+            values: { [key: string]: number };
+          }) => {
+            const transformedValues: { [criterionId: string]: number } = {};
+
+            // If values are keyed by criterion names, convert to IDs
+            if (alternative.values && typeof alternative.values === "object") {
+              Object.entries(alternative.values).forEach(([key, value]) => {
+                const criterionId = criterionNameToId.get(key);
+                if (criterionId) {
+                  transformedValues[criterionId] = value as number;
+                } else {
+                  // If key is already an ID, use it directly
+                  transformedValues[key] = value as number;
+                }
+              });
+            }
+
+            return {
+              ...alternative,
+              id: alternative.id || uuidv4(),
+              values: transformedValues,
+            };
+          }
+        );
+
         const validation = SPKCalculator.validateInputData(
-          criteria,
-          alternatives
+          criteriaWithIds,
+          alternativesWithIds
         );
         if (!validation.isValid) {
           res.status(400).json({
@@ -289,46 +418,60 @@ export class SPKController {
           await tx.alternative.deleteMany({ where: { spkId: id } });
           await tx.criterion.deleteMany({ where: { spkId: id } });
 
-          // Recalculate results
-          const sawResults = SPKCalculator.calculateSAW(criteria, alternatives);
-          const wpResults = SPKCalculator.calculateWP(criteria, alternatives);
+          // Recalculate results using the transformed data
+          const sawResults = SPKCalculator.calculateSAW(
+            criteriaWithIds,
+            alternativesWithIds
+          );
+          const wpResults = SPKCalculator.calculateWP(
+            criteriaWithIds,
+            alternativesWithIds
+          );
 
           // Recreate all data (similar to create logic)
           await Promise.all(
-            criteria.map((criterion: any) =>
-              tx.criterion.create({
-                data: {
-                  id: criterion.id || uuidv4(),
-                  spkId: id,
-                  name: criterion.name,
-                  weight: criterion.weight,
-                  type: criterion.type,
-                },
-              })
+            criteriaWithIds.map(
+              (criterion: {
+                id: string;
+                name: string;
+                weight: number;
+                type: "benefit" | "cost";
+              }) =>
+                tx.criterion.create({
+                  data: {
+                    id: criterion.id,
+                    spkId: id,
+                    name: criterion.name,
+                    weight: criterion.weight,
+                    type: criterion.type,
+                  },
+                })
             )
           );
 
           const createdAlternatives = await Promise.all(
-            alternatives.map((alternative: any) =>
-              tx.alternative.create({
-                data: {
-                  id: alternative.id || uuidv4(),
-                  spkId: id,
-                  name: alternative.name,
-                },
-              })
+            alternativesWithIds.map(
+              (alternative: {
+                id: string;
+                name: string;
+                values: { [key: string]: number };
+              }) =>
+                tx.alternative.create({
+                  data: {
+                    id: alternative.id,
+                    spkId: id,
+                    name: alternative.name,
+                  },
+                })
             )
           );
 
-          // Create alternative values
+          // Create alternative values using the transformed values with criterion IDs
           const alternativeValues = [];
-          for (const alternative of alternatives) {
+          for (const alternative of alternativesWithIds) {
             for (const criterionId of Object.keys(alternative.values)) {
               alternativeValues.push({
-                alternativeId:
-                  alternative.id ||
-                  createdAlternatives.find((a) => a.name === alternative.name)
-                    ?.id,
+                alternativeId: alternative.id,
                 criterionId: criterionId,
                 value: alternative.values[criterionId],
               });

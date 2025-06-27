@@ -1,14 +1,39 @@
-import React, { useState } from 'react';
-import { Criterion, Alternative, SAWResult, WPResult } from '@/pages/Index';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Trophy, Medal, Award, Save, ArrowLeft, RotateCcw, Info } from 'lucide-react';
-import { RankingAnalysis } from './RankingAnalysis';
+import React, { useState } from "react";
+import { SAWResult, WPResult } from "@/lib/api";
+import { Criterion, Alternative } from "@/pages/Index";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  Trophy,
+  Medal,
+  Award,
+  Save,
+  ArrowLeft,
+  RotateCcw,
+  Info,
+} from "lucide-react";
+import { RankingAnalysis } from "./RankingAnalysis";
 
 interface ResultComparisonProps {
   criteria: Criterion[];
@@ -19,6 +44,10 @@ interface ResultComparisonProps {
   onReset: () => void;
   onSave?: (title: string) => void;
   isViewMode?: boolean;
+  isReadOnly?: boolean;
+  isLoading?: boolean;
+  isEditing?: boolean;
+  currentTitle?: string;
 }
 
 export const ResultComparison: React.FC<ResultComparisonProps> = ({
@@ -29,19 +58,30 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
   onPrev,
   onReset,
   onSave,
-  isViewMode = false
+  isViewMode = false,
+  isReadOnly = false,
+  isLoading = false,
+  isEditing = false,
+  currentTitle = "",
 }) => {
-  const [saveTitle, setSaveTitle] = useState('');
+  const [saveTitle, setSaveTitle] = useState(currentTitle);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
-  const chartData = alternatives.map(alt => {
-    const sawScore = sawResults.find(r => r.alternativeId === alt.id)?.score || 0;
-    const wpScore = wpResults.find(r => r.alternativeId === alt.id)?.score || 0;
-    
+  // Update saveTitle when currentTitle changes (editing mode)
+  React.useEffect(() => {
+    setSaveTitle(currentTitle);
+  }, [currentTitle]);
+
+  const chartData = alternatives.map((alt) => {
+    const sawScore =
+      sawResults.find((r) => r.alternativeId === alt.id)?.score || 0;
+    const wpScore =
+      wpResults.find((r) => r.alternativeId === alt.id)?.score || 0;
+
     return {
       name: alt.name,
       SAW: Number(sawScore.toFixed(4)),
-      WP: Number(wpScore.toFixed(4))
+      WP: Number(wpScore.toFixed(4)),
     };
   });
 
@@ -54,7 +94,9 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
       case 3:
         return <Award className="h-5 w-5 text-amber-600" />;
       default:
-        return <span className="text-lg font-bold text-slate-500">#{rank}</span>;
+        return (
+          <span className="text-lg font-bold text-slate-500">#{rank}</span>
+        );
     }
   };
 
@@ -62,7 +104,7 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
     if (saveTitle.trim() && onSave) {
       onSave(saveTitle.trim());
       setShowSaveDialog(false);
-      setSaveTitle('');
+      setSaveTitle("");
     }
   };
 
@@ -70,23 +112,36 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Hasil Perbandingan</h2>
-          <p className="text-slate-600 mt-1">Perbandingan metode SAW vs WP dengan analisis ranking</p>
+          <h2 className="text-2xl font-bold text-slate-900">
+            Hasil Perbandingan
+          </h2>
+          <p className="text-slate-600 mt-1">
+            Perbandingan metode SAW vs WP dengan analisis ranking
+          </p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" onClick={onPrev}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kembali
           </Button>
-          {!isViewMode && (
+          {!isViewMode && !isReadOnly && (
             <>
-              <Button variant="outline" onClick={onReset}>
+              <Button variant="outline" onClick={onReset} disabled={isLoading}>
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reset
               </Button>
-              <Button onClick={() => setShowSaveDialog(true)}>
+              <Button
+                onClick={() => setShowSaveDialog(true)}
+                disabled={isLoading}
+              >
                 <Save className="h-4 w-4 mr-2" />
-                Simpan Hasil
+                {isLoading
+                  ? isEditing
+                    ? "Memperbarui..."
+                    : "Menyimpan..."
+                  : isEditing
+                  ? "Perbarui Hasil"
+                  : "Simpan Hasil"}
               </Button>
             </>
           )}
@@ -98,7 +153,9 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
         <Card className="p-6 bg-blue-50 border-blue-200">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="save-title">Judul SPK</Label>
+              <Label htmlFor="save-title">
+                {isEditing ? "Edit Judul SPK" : "Judul SPK"}
+              </Label>
               <Input
                 id="save-title"
                 value={saveTitle}
@@ -109,9 +166,12 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
             </div>
             <div className="flex gap-3">
               <Button onClick={handleSave} disabled={!saveTitle.trim()}>
-                Simpan
+                {isEditing ? "Perbarui" : "Simpan"}
               </Button>
-              <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowSaveDialog(false)}
+              >
                 Batal
               </Button>
             </div>
@@ -131,10 +191,15 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
         <TabsContent value="results" className="space-y-6">
           {/* Visualization Chart */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Grafik Perbandingan Skor</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+              Grafik Perbandingan Skor
+            </h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -165,13 +230,17 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
                 </TableHeader>
                 <TableBody>
                   {sawResults.map((result) => {
-                    const alternative = alternatives.find(alt => alt.id === result.alternativeId);
+                    const alternative = alternatives.find(
+                      (alt) => alt.id === result.alternativeId
+                    );
                     return (
                       <TableRow key={result.alternativeId}>
                         <TableCell className="flex items-center gap-2">
                           {getRankIcon(result.rank)}
                         </TableCell>
-                        <TableCell className="font-medium">{alternative?.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {alternative?.name}
+                        </TableCell>
                         <TableCell>{result.score.toFixed(4)}</TableCell>
                       </TableRow>
                     );
@@ -196,13 +265,17 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
                 </TableHeader>
                 <TableBody>
                   {wpResults.map((result) => {
-                    const alternative = alternatives.find(alt => alt.id === result.alternativeId);
+                    const alternative = alternatives.find(
+                      (alt) => alt.id === result.alternativeId
+                    );
                     return (
                       <TableRow key={result.alternativeId}>
                         <TableCell className="flex items-center gap-2">
                           {getRankIcon(result.rank)}
                         </TableCell>
-                        <TableCell className="font-medium">{alternative?.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {alternative?.name}
+                        </TableCell>
                         <TableCell>{result.score.toFixed(4)}</TableCell>
                       </TableRow>
                     );
@@ -214,26 +287,44 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
 
           {/* Winner Comparison */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Perbandingan Pemenang</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+              Perbandingan Pemenang
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="text-center p-6 bg-blue-50 rounded-lg">
                 <Trophy className="h-12 w-12 text-blue-600 mx-auto mb-3" />
-                <h4 className="text-lg font-semibold text-blue-900 mb-2">Pemenang SAW</h4>
+                <h4 className="text-lg font-semibold text-blue-900 mb-2">
+                  Pemenang SAW
+                </h4>
                 <p className="text-xl font-bold text-blue-700">
-                  {alternatives.find(alt => alt.id === sawResults.find(r => r.rank === 1)?.alternativeId)?.name}
+                  {
+                    alternatives.find(
+                      (alt) =>
+                        alt.id ===
+                        sawResults.find((r) => r.rank === 1)?.alternativeId
+                    )?.name
+                  }
                 </p>
                 <p className="text-sm text-blue-600 mt-1">
-                  Skor: {sawResults.find(r => r.rank === 1)?.score.toFixed(4)}
+                  Skor: {sawResults.find((r) => r.rank === 1)?.score.toFixed(4)}
                 </p>
               </div>
               <div className="text-center p-6 bg-emerald-50 rounded-lg">
                 <Trophy className="h-12 w-12 text-emerald-600 mx-auto mb-3" />
-                <h4 className="text-lg font-semibold text-emerald-900 mb-2">Pemenang WP</h4>
+                <h4 className="text-lg font-semibold text-emerald-900 mb-2">
+                  Pemenang WP
+                </h4>
                 <p className="text-xl font-bold text-emerald-700">
-                  {alternatives.find(alt => alt.id === wpResults.find(r => r.rank === 1)?.alternativeId)?.name}
+                  {
+                    alternatives.find(
+                      (alt) =>
+                        alt.id ===
+                        wpResults.find((r) => r.rank === 1)?.alternativeId
+                    )?.name
+                  }
                 </p>
                 <p className="text-sm text-emerald-600 mt-1">
-                  Skor: {wpResults.find(r => r.rank === 1)?.score.toFixed(4)}
+                  Skor: {wpResults.find((r) => r.rank === 1)?.score.toFixed(4)}
                 </p>
               </div>
             </div>
