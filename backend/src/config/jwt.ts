@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 
 export interface JWTPayload {
@@ -24,14 +24,14 @@ export class JWTService {
   ): TokenPair {
     const accessToken = jwt.sign(payload, this.accessSecret, {
       expiresIn: this.accessExpiresIn,
-    });
+    } as SignOptions);
 
     const refreshToken = jwt.sign(
       { ...payload, jti: uuidv4() },
       this.refreshSecret,
       {
         expiresIn: this.refreshExpiresIn,
-      }
+      } as SignOptions
     );
 
     return { accessToken, refreshToken };
