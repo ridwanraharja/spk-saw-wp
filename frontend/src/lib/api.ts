@@ -8,6 +8,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  role: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -93,6 +94,22 @@ export interface SPKRecord {
   alternatives: Alternative[];
   sawResults: SAWResult[];
   wpResults: WPResult[];
+}
+
+// Extended SPKRecord for admin view with user information
+export interface SPKRecordWithUser extends SPKRecord {
+  user: User;
+}
+
+// Response type for admin SPK list
+export interface AdminSPKResponse {
+  spkRecords: SPKRecordWithUser[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface CreateSPKData {
@@ -328,6 +345,10 @@ export const spkApi = {
     return ApiClient.post<SPKRecord>("/spk", data);
   },
 
+  getAllAdmin: async (): Promise<ApiResponse<AdminSPKResponse>> => {
+    return ApiClient.get<AdminSPKResponse>("/spk/admin/all");
+  },
+
   getAll: async (params?: {
     page?: number;
     limit?: number;
@@ -371,6 +392,52 @@ export const spkApi = {
 export const dashboardApi = {
   getStats: async (): Promise<ApiResponse<DashboardStats>> => {
     return ApiClient.get<DashboardStats>("/dashboard/stats");
+  },
+};
+
+export const userApi = {
+  getAllUsers: async (): Promise<ApiResponse<{ users: User[] }>> => {
+    return ApiClient.get<{ users: User[] }>("/auth/admin/users");
+  },
+
+  createUser: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+  }): Promise<ApiResponse<{ user: User }>> => {
+    return ApiClient.post<{ user: User }>("/auth/admin/users", data);
+  },
+
+  updateUserRole: async (
+    userId: string,
+    role: string
+  ): Promise<ApiResponse<{ user: User }>> => {
+    return ApiClient.put<{ user: User }>(`/auth/admin/users/${userId}/role`, {
+      role,
+    });
+  },
+
+  deleteUser: async (userId: string): Promise<ApiResponse> => {
+    return ApiClient.delete(`/auth/admin/users/${userId}`);
+  },
+
+  getRoles: async (): Promise<
+    ApiResponse<{
+      roles: Array<{
+        value: string;
+        label: string;
+        description: string;
+      }>;
+    }>
+  > => {
+    return ApiClient.get<{
+      roles: Array<{
+        value: string;
+        label: string;
+        description: string;
+      }>;
+    }>("/auth/roles");
   },
 };
 

@@ -1,13 +1,42 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Home, Plus, History, BarChart3, LogOut, User } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import {
+  Home,
+  Plus,
+  History,
+  BarChart3,
+  LogOut,
+  User,
+  Users,
+  Database,
+  Shield,
+} from "lucide-react";
 import { User as UserType } from "@/lib/api";
 
 interface AdminSidebarProps {
-  currentView: "dashboard" | "new-spk" | "history" | "view-result" | "edit-spk";
+  currentView:
+    | "dashboard"
+    | "new-spk"
+    | "history"
+    | "view-result"
+    | "edit-spk"
+    | "users"
+    | "create-user"
+    | "edit-user"
+    | "all-spk";
   onViewChange: (
-    view: "dashboard" | "new-spk" | "history" | "view-result" | "edit-spk"
+    view:
+      | "dashboard"
+      | "new-spk"
+      | "history"
+      | "view-result"
+      | "edit-spk"
+      | "users"
+      | "create-user"
+      | "edit-user"
+      | "all-spk"
   ) => void;
   user: UserType | null;
   onLogout: () => void;
@@ -25,7 +54,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   totalSPK = 0,
   isMobile = false,
 }) => {
-  const menuItems = [
+  const regularMenuItems = [
     {
       id: "dashboard" as const,
       label: "Dashboard",
@@ -45,6 +74,24 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       description: "Riwayat SPK",
     },
   ];
+
+  const adminMenuItems =
+    user?.role === "admin"
+      ? [
+          {
+            id: "users" as const,
+            label: "Users",
+            icon: Users,
+            description: "Kelola user",
+          },
+          {
+            id: "all-spk" as const,
+            label: "All SPK",
+            icon: Database,
+            description: "Lihat semua SPK",
+          },
+        ]
+      : [];
 
   return (
     <div
@@ -69,7 +116,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
       {/* Navigation */}
       <nav className="flex-1 p-3 sm:p-4 space-y-2">
-        {menuItems.map((item) => {
+        {/* Regular Menu Items */}
+        {regularMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
 
@@ -105,6 +153,59 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </Button>
           );
         })}
+
+        {/* Admin Section Separator */}
+        {adminMenuItems.length > 0 && (
+          <>
+            <div className="my-4">
+              <div className="flex items-center gap-2 px-3 py-2">
+                <Shield className="h-4 w-4 text-orange-600" />
+                <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">
+                  Admin Panel
+                </span>
+              </div>
+              <Separator className="my-2" />
+            </div>
+
+            {/* Admin Menu Items */}
+            {adminMenuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentView === item.id;
+
+              return (
+                <Button
+                  key={item.id}
+                  variant={isActive ? "default" : "ghost"}
+                  className={`w-full justify-start h-auto p-3 text-left ${
+                    isActive
+                      ? "bg-orange-600 text-white hover:bg-orange-700"
+                      : "text-slate-700 hover:bg-orange-50 border-l-2 border-orange-200"
+                  }`}
+                  onClick={() => {
+                    onViewChange(item.id);
+                    onNavigate?.();
+                  }}
+                >
+                  <div className="flex items-center gap-3 w-full min-w-0">
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-sm sm:text-base truncate">
+                        {item.label}
+                      </div>
+                      <div
+                        className={`text-xs mt-0.5 truncate ${
+                          isActive ? "text-orange-100" : "text-slate-500"
+                        }`}
+                      >
+                        {item.description}
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       {/* User Info & Stats */}
@@ -118,8 +219,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 {user?.name || "User"}
               </span>
             </div>
-            <div className="text-xs text-slate-500 truncate mb-3">
+            <div className="text-xs text-slate-500 truncate mb-2">
               {user?.email}
+            </div>
+            <div className="text-xs text-slate-600 mb-3">
+              Role: {user?.role === "admin" ? "Administrator" : "User"}
             </div>
             <Button
               variant="outline"
@@ -130,18 +234,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <LogOut className="h-3 w-3 mr-1" />
               Keluar
             </Button>
-          </div>
-        </Card>
-
-        {/* Stats Card */}
-        <Card className="p-3 sm:p-4 bg-slate-50">
-          <div className="text-center">
-            <div className="text-xl sm:text-2xl font-bold text-slate-900">
-              {totalSPK}
-            </div>
-            <div className="text-xs sm:text-sm text-slate-600 mt-1">
-              Total SPK Tersimpan
-            </div>
           </div>
         </Card>
       </div>

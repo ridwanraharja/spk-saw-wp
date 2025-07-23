@@ -6,6 +6,10 @@ import { ReviewData } from "@/components/ReviewData";
 import { ResultComparison } from "@/components/ResultComparison";
 import { HistoryList } from "@/components/HistoryList";
 import { AdminSidebar } from "@/components/AdminSidebar";
+import { UserList } from "@/components/UserList";
+import { CreateUserForm } from "@/components/CreateUserForm";
+import { EditUserForm } from "@/components/EditUserForm";
+import { AllSPKList } from "@/components/AllSPKList";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -133,7 +137,15 @@ const transformFormToApi = (
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "new-spk" | "history" | "view-result" | "edit-spk"
+    | "dashboard"
+    | "new-spk"
+    | "history"
+    | "view-result"
+    | "edit-spk"
+    | "users"
+    | "create-user"
+    | "edit-user"
+    | "all-spk"
   >("dashboard");
   const [currentStep, setCurrentStep] = useState(1);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
@@ -143,6 +155,13 @@ const Index = () => {
   const [selectedRecord, setSelectedRecord] = useState<SPKRecord | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SPKRecord | null>(null);
+  const [editingUser, setEditingUser] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    createdAt: string;
+  } | null>(null);
 
   const { user, logout } = useAuth();
   const { toast } = useToast();
@@ -432,6 +451,39 @@ const Index = () => {
     }
   };
 
+  const handleCreateUser = () => {
+    setCurrentView("create-user");
+  };
+
+  const handleEditUser = (user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    createdAt: string;
+  }) => {
+    setEditingUser(user);
+    setCurrentView("edit-user");
+  };
+
+  const handleBackToUsers = () => {
+    setCurrentView("users");
+    setEditingUser(null);
+  };
+
+  const handleViewAllSPK = (spk: SPKRecord) => {
+    setSelectedRecord(spk);
+    setCurrentView("view-result");
+  };
+
+  const handleEditAllSPK = (spk: SPKRecord) => {
+    editSPK(spk);
+  };
+
+  const handleDeleteAllSPK = (id: string) => {
+    deleteRecord(id);
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -503,35 +555,7 @@ const Index = () => {
                   pendukung keputusan SAW & WP Anda.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={startNewSPK}
-                  className="flex items-center gap-2 w-full sm:w-auto"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  Buat SPK Baru
-                </Button>
-
-                {/* User Menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
-                      <User className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
-                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                      {user?.email}
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Keluar
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <div className="flex items-center gap-2"></div>
             </div>
 
             {/* Stats Cards */}
@@ -633,12 +657,6 @@ const Index = () => {
                   Ikuti langkah-langkah untuk membuat analisis SPK
                 </p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentView("dashboard")}
-              >
-                Kembali ke Dashboard
-              </Button>
             </div>
 
             <StepIndicator steps={steps} currentStep={currentStep} />
@@ -685,12 +703,6 @@ const Index = () => {
                   Lihat dan kelola riwayat analisis SPK Anda
                 </p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentView("dashboard")}
-              >
-                Kembali ke Dashboard
-              </Button>
             </div>
 
             <HistoryList
@@ -739,6 +751,115 @@ const Index = () => {
             />
           </div>
         ) : null;
+
+      case "users":
+        // Only allow admin to access user management
+        if (user?.role !== "admin") {
+          return (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-red-600 mb-2">
+                  Akses Ditolak
+                </h2>
+                <p className="text-gray-600">
+                  Anda tidak memiliki izin untuk mengakses halaman ini.
+                </p>
+                <Button
+                  onClick={() => setCurrentView("dashboard")}
+                  className="mt-4"
+                >
+                  Kembali ke Dashboard
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <UserList
+            onCreateUser={handleCreateUser}
+            onEditUser={handleEditUser}
+          />
+        );
+
+      case "create-user":
+        // Only allow admin to access user management
+        if (user?.role !== "admin") {
+          return (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-red-600 mb-2">
+                  Akses Ditolak
+                </h2>
+                <p className="text-gray-600">
+                  Anda tidak memiliki izin untuk mengakses halaman ini.
+                </p>
+                <Button
+                  onClick={() => setCurrentView("dashboard")}
+                  className="mt-4"
+                >
+                  Kembali ke Dashboard
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        return <CreateUserForm onBack={handleBackToUsers} />;
+
+      case "edit-user":
+        // Only allow admin to access user management
+        if (user?.role !== "admin") {
+          return (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-red-600 mb-2">
+                  Akses Ditolak
+                </h2>
+                <p className="text-gray-600">
+                  Anda tidak memiliki izin untuk mengakses halaman ini.
+                </p>
+                <Button
+                  onClick={() => setCurrentView("dashboard")}
+                  className="mt-4"
+                >
+                  Kembali ke Dashboard
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        return editingUser ? (
+          <EditUserForm user={editingUser} onBack={handleBackToUsers} />
+        ) : null;
+
+      case "all-spk":
+        // Only allow admin to access all SPK view
+        if (user?.role !== "admin") {
+          return (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-red-600 mb-2">
+                  Akses Ditolak
+                </h2>
+                <p className="text-gray-600">
+                  Anda tidak memiliki izin untuk mengakses halaman ini.
+                </p>
+                <Button
+                  onClick={() => setCurrentView("dashboard")}
+                  className="mt-4"
+                >
+                  Kembali ke Dashboard
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <AllSPKList
+            onViewSPK={handleViewAllSPK}
+            onEditSPK={handleEditAllSPK}
+            onDeleteSPK={handleDeleteAllSPK}
+          />
+        );
 
       default:
         return null;

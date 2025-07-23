@@ -2,7 +2,21 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Calendar, BarChart3, Trash2, Loader2, Edit } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Eye,
+  Calendar,
+  BarChart3,
+  Trash2,
+  Loader2,
+  Edit,
+  MoreHorizontal,
+} from "lucide-react";
 import { SPKRecord } from "@/lib/api";
 
 interface HistoryListProps {
@@ -86,47 +100,39 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             </div>
 
             {showActions && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onViewResult(record)}
-                  className="flex items-center gap-2"
-                  disabled={isDeleting}
-                >
-                  <Eye className="h-4 w-4" />
-                  <span className="hidden sm:inline">Lihat Hasil</span>
-                </Button>
-                {onDeleteRecord && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => onDeleteRecord(record.id)}
-                    className="flex items-center gap-2"
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                    <span className="hidden sm:inline">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onViewResult(record)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Lihat Hasil
+                  </DropdownMenuItem>
+                  {onEditSPK && (
+                    <DropdownMenuItem onClick={() => onEditSPK(record)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                  )}
+                  {onDeleteRecord && (
+                    <DropdownMenuItem
+                      onClick={() => onDeleteRecord(record.id)}
+                      className="text-red-600"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="mr-2 h-4 w-4" />
+                      )}
                       {isDeleting ? "Menghapus..." : "Hapus"}
-                    </span>
-                  </Button>
-                )}
-                {onEditSPK && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEditSPK(record)}
-                    className="flex items-center gap-2 w-full sm:w-auto"
-                  >
-                    <Edit className="h-4 w-4" />
-                    <span className="sm:inline">Edit</span>
-                  </Button>
-                )}
-              </div>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </Card>
