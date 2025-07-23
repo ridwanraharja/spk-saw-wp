@@ -82,11 +82,7 @@ export const CreateUserForm: React.FC<CreateUserFormProps> = ({ onBack }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Kembali
-        </Button>
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
             Tambah User Baru
@@ -95,6 +91,15 @@ export const CreateUserForm: React.FC<CreateUserFormProps> = ({ onBack }) => {
             Buat user baru untuk sistem SPK SAW WP
           </p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBack}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Kembali
+        </Button>
       </div>
 
       {/* Form */}
@@ -171,10 +176,7 @@ export const CreateUserForm: React.FC<CreateUserFormProps> = ({ onBack }) => {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end gap-4">
-            <Button type="button" variant="outline" onClick={onBack}>
-              Batal
-            </Button>
+          <div className="flex justify-end">
             <Button
               type="submit"
               disabled={createUserMutation.isPending}

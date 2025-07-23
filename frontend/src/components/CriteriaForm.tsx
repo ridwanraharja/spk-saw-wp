@@ -1,12 +1,17 @@
-
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
-import { Plus, Trash2, AlertCircle } from 'lucide-react';
-import { Criterion } from '@/pages/Index';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
+import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Criterion } from "@/pages/Index";
 
 interface CriteriaFormProps {
   criteria: Criterion[];
@@ -22,27 +27,30 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
   const [totalWeight, setTotalWeight] = useState(0);
 
   useEffect(() => {
-    const total = criteria.reduce((sum, criterion) => sum + criterion.weight, 0);
+    const total = criteria.reduce(
+      (sum, criterion) => sum + criterion.weight,
+      0
+    );
     setTotalWeight(total);
   }, [criteria]);
 
   const addCriterion = () => {
     const newCriterion: Criterion = {
       id: `criterion-${Date.now()}`,
-      name: '',
+      name: "",
       weight: 0,
-      type: 'benefit',
+      type: "benefit",
     };
     setCriteria([...criteria, newCriterion]);
   };
 
   const removeCriterion = (id: string) => {
-    setCriteria(criteria.filter(criterion => criterion.id !== id));
+    setCriteria(criteria.filter((criterion) => criterion.id !== id));
   };
 
   const updateCriterion = (id: string, updates: Partial<Criterion>) => {
     setCriteria(
-      criteria.map(criterion =>
+      criteria.map((criterion) =>
         criterion.id === id ? { ...criterion, ...updates } : criterion
       )
     );
@@ -51,7 +59,9 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
   const canProceed = () => {
     return (
       criteria.length >= 2 &&
-      criteria.every(criterion => criterion.name.trim() !== '' && criterion.weight > 0) &&
+      criteria.every(
+        (criterion) => criterion.name.trim() !== "" && criterion.weight > 0
+      ) &&
       Math.abs(totalWeight - 1) < 0.001
     );
   };
@@ -59,7 +69,9 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Input Kriteria Penilaian</h2>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">
+          Input Kriteria Penilaian
+        </h2>
         <p className="text-slate-600">
           Tentukan kriteria yang akan digunakan untuk penilaian beserta bobotnya
         </p>
@@ -72,23 +84,31 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
               <div className="bg-blue-100 text-blue-800 rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium">
                 {index + 1}
               </div>
-              
+
               <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor={`name-${criterion.id}`} className="text-sm font-medium">
+                  <Label
+                    htmlFor={`name-${criterion.id}`}
+                    className="text-sm font-medium"
+                  >
                     Nama Kriteria
                   </Label>
                   <Input
                     id={`name-${criterion.id}`}
                     placeholder="Contoh: Gaji, Pengalaman, dll"
                     value={criterion.name}
-                    onChange={(e) => updateCriterion(criterion.id, { name: e.target.value })}
+                    onChange={(e) =>
+                      updateCriterion(criterion.id, { name: e.target.value })
+                    }
                     className="mt-1"
                   />
                 </div>
-                
+
                 <div>
-                  <Label htmlFor={`weight-${criterion.id}`} className="text-sm font-medium">
+                  <Label
+                    htmlFor={`weight-${criterion.id}`}
+                    className="text-sm font-medium"
+                  >
                     Bobot (0-1)
                   </Label>
                   <Input
@@ -98,19 +118,26 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
                     min="0"
                     max="1"
                     placeholder="0.25"
-                    value={criterion.weight || ''}
-                    onChange={(e) => updateCriterion(criterion.id, { weight: parseFloat(e.target.value) || 0 })}
+                    value={criterion.weight || ""}
+                    onChange={(e) =>
+                      updateCriterion(criterion.id, {
+                        weight: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="mt-1"
                   />
                 </div>
-                
+
                 <div>
-                  <Label htmlFor={`type-${criterion.id}`} className="text-sm font-medium">
+                  <Label
+                    htmlFor={`type-${criterion.id}`}
+                    className="text-sm font-medium"
+                  >
                     Tipe Kriteria
                   </Label>
                   <Select
                     value={criterion.type}
-                    onValueChange={(value: 'benefit' | 'cost') => 
+                    onValueChange={(value: "benefit" | "cost") =>
                       updateCriterion(criterion.id, { type: value })
                     }
                   >
@@ -118,18 +145,22 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="benefit">Benefit (Semakin besar semakin baik)</SelectItem>
-                      <SelectItem value="cost">Cost (Semakin kecil semakin baik)</SelectItem>
+                      <SelectItem value="benefit">
+                        Benefit (Semakin besar semakin baik)
+                      </SelectItem>
+                      <SelectItem value="cost">
+                        Cost (Semakin kecil semakin baik)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => removeCriterion(criterion.id)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 mt-7"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -149,14 +180,16 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
         </Button>
 
         <div className="flex items-center space-x-4">
-          <div className={`px-3 py-2 rounded-lg text-sm font-medium ${
-            Math.abs(totalWeight - 1) < 0.001 
-              ? 'bg-emerald-100 text-emerald-800'
-              : 'bg-yellow-100 text-yellow-800'
-          }`}>
+          <div
+            className={`px-3 py-2 rounded-lg text-sm font-medium ${
+              Math.abs(totalWeight - 1) < 0.001
+                ? "bg-emerald-100 text-emerald-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
             Total Bobot: {totalWeight.toFixed(3)}
           </div>
-          
+
           {Math.abs(totalWeight - 1) >= 0.001 && (
             <div className="flex items-center space-x-2 text-amber-600">
               <AlertCircle className="h-4 w-4" />

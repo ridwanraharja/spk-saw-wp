@@ -163,7 +163,14 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
           </TableHeader>
           <TableBody>
             {spkRecords.map((spk: SPKRecordWithUser) => (
-              <TableRow key={spk.id}>
+              <TableRow
+                className="cursor-pointer"
+                key={spk.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewSPK(spk);
+                }}
+              >
                 <TableCell className="font-medium">{spk.title}</TableCell>
                 <TableCell>
                   <div>
@@ -193,10 +200,10 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onViewSPK(spk)}>
+                      {/* <DropdownMenuItem onClick={() => onViewSPK(spk)}>
                         <Eye className="mr-2 h-4 w-4" />
                         Lihat
-                      </DropdownMenuItem>
+                      </DropdownMenuItem> */}
                       <DropdownMenuItem onClick={() => onEditSPK(spk)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
