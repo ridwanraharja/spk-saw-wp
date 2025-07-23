@@ -5,26 +5,32 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import rateLimit from "express-rate-limit";
 
-// Import configurations
 import prisma from "./config/database";
 import { setupSwagger } from "./config/swagger";
 
-// Import middleware
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
-// Import routes
 import authRoutes from "./routes/authRoutes";
 import spkRoutes from "./routes/spkRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
+import { createFirstAdmin } from "./utils/createAdmin";
 
-// Load environment variables
 dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 3000;
 const apiPrefix = process.env.API_PREFIX || "/api";
 
-// Security middleware
+const corsOrigins =
+  process.env.NODE_ENV === "production"
+    ? ["https://your-frontend-domain.com"]
+    : [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:3001",
+        "http://localhost:8080",
+      ];
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -38,28 +44,18 @@ app.use(
   })
 );
 
-// CORS configuration
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? ["https://your-frontend-domain.com"]
-        : [
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://localhost:3001",
-            "http://localhost:8080",
-          ],
+    origin: corsOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000"), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "100"), // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000"),
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "100"),
   message: {
     success: false,
     message: "Too many requests from this IP, please try again later.",
@@ -70,16 +66,13 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-// Logging middleware
 if (process.env.NODE_ENV !== "test") {
   app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 }
 
-// Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Health check endpoint
 app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
@@ -90,7 +83,6 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
-// Root endpoint
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
@@ -105,27 +97,21 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
-// API Routes
 app.use(`${apiPrefix}/auth`, authRoutes);
 app.use(`${apiPrefix}/spk`, spkRoutes);
 app.use(`${apiPrefix}/dashboard`, dashboardRoutes);
 
-// Setup Swagger documentation
 setupSwagger(app);
 
-// 404 handler for undefined routes
 app.use(notFoundHandler);
 
-// Global error handling middleware
 app.use(errorHandler);
 
-// Database connection test
 const connectDatabase = async () => {
   try {
     await prisma.$connect();
     console.log("✅ Database connected successfully");
 
-    // Test database connection
     await prisma.$queryRaw`SELECT 1`;
     console.log("✅ Database query test successful");
   } catch (error) {
@@ -134,7 +120,6 @@ const connectDatabase = async () => {
   }
 };
 
-// Graceful shutdown
 const gracefulShutdown = async (signal: string) => {
   console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
 
@@ -149,26 +134,25 @@ const gracefulShutdown = async (signal: string) => {
   }
 };
 
-// Handle process termination
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-// Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
   console.error("❌ Uncaught Exception:", error);
   gracefulShutdown("UNCAUGHT_EXCEPTION");
 });
 
-// Handle unhandled promise rejections
 process.on("unhandledRejection", (reason, promise) => {
   console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
   gracefulShutdown("UNHANDLED_REJECTION");
 });
 
-// Start server
 const startServer = async () => {
   try {
     await connectDatabase();
+
+    // Create first admin user if not exists
+    await createFirstAdmin();
 
     const server = app.listen(port, () => {
       console.log("\n🚀 Server is running!");
@@ -178,12 +162,27 @@ const startServer = async () => {
       console.log(`📍 API Documentation: http://localhost:${port}/api-docs`);
       console.log(`📍 Health Check: http://localhost:${port}/health`);
       console.log("\n📋 Available Endpoints:");
-      console.log(`   • POST ${apiPrefix}/auth/register - Register new user`);
       console.log(`   • POST ${apiPrefix}/auth/login - Login user`);
       console.log(`   • POST ${apiPrefix}/auth/refresh - Refresh token`);
       console.log(`   • POST ${apiPrefix}/auth/logout - Logout user`);
       console.log(`   • GET  ${apiPrefix}/auth/profile - Get user profile`);
       console.log(`   • PUT  ${apiPrefix}/auth/profile - Update user profile`);
+      console.log(`   • GET  ${apiPrefix}/auth/roles - Get available roles`);
+      console.log(
+        `   • GET  ${apiPrefix}/auth/roles/public - Get available roles (public)`
+      );
+      console.log(
+        `   • POST ${apiPrefix}/auth/admin/users - Create new user (admin)`
+      );
+      console.log(
+        `   • GET  ${apiPrefix}/auth/admin/users - Get all users (admin)`
+      );
+      console.log(
+        `   • PUT  ${apiPrefix}/auth/admin/users/:id/role - Update user role (admin)`
+      );
+      console.log(
+        `   • DELETE ${apiPrefix}/auth/admin/users/:id - Delete user (admin)`
+      );
       console.log(`   • POST ${apiPrefix}/spk - Create SPK record`);
       console.log(`   • GET  ${apiPrefix}/spk - Get all SPK records`);
       console.log(`   • GET  ${apiPrefix}/spk/:id - Get SPK record by ID`);
@@ -196,7 +195,6 @@ const startServer = async () => {
       console.log("📖 Full API documentation available at /api-docs\n");
     });
 
-    // Handle server errors
     server.on("error", (error) => {
       if ((error as any).code === "EADDRINUSE") {
         console.error(`❌ Port ${port} is already in use`);
@@ -211,7 +209,6 @@ const startServer = async () => {
   }
 };
 
-// Start the server
 startServer();
 
 export default app;

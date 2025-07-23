@@ -210,14 +210,25 @@ export class SPKController {
   static getSPKList = asyncHandler(
     async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       const userId = req.user?.userId;
+      const userRole = req.user?.role;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const skip = (page - 1) * limit;
 
+      // Build where clause based on user role
+      const whereClause = userRole === "admin" ? {} : { userId };
+
       const [spkRecords, total] = await Promise.all([
         prisma.sPKRecord.findMany({
-          where: { userId },
+          where: whereClause,
           include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
             criteria: true,
             alternatives: {
               include: {
@@ -230,7 +241,7 @@ export class SPKController {
           orderBy: { createdAt: "desc" },
         }),
         prisma.sPKRecord.count({
-          where: { userId },
+          where: whereClause,
         }),
       ]);
 
@@ -253,14 +264,22 @@ export class SPKController {
   static getSPKById = asyncHandler(
     async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       const userId = req.user?.userId;
+      const userRole = req.user?.role;
       const { id } = req.params;
 
+      // Build where clause based on user role
+      const whereClause = userRole === "admin" ? { id } : { id, userId }; // Ensure user can only access their own records
+
       const spkRecord = await prisma.sPKRecord.findFirst({
-        where: {
-          id,
-          userId, // Ensure user can only access their own records
-        },
+        where: whereClause,
         include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
           criteria: true,
           alternatives: {
             include: {
@@ -303,15 +322,16 @@ export class SPKController {
   static updateSPK = asyncHandler(
     async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       const userId = req.user?.userId;
+      const userRole = req.user?.role;
       const { id } = req.params;
       const { title, criteria, alternatives } = req.body;
 
-      // Check if record exists and belongs to user
+      // Build where clause based on user role
+      const whereClause = userRole === "admin" ? { id } : { id, userId }; // Ensure user can only access their own records
+
+      // Check if record exists and user has access
       const existingSPK = await prisma.sPKRecord.findFirst({
-        where: {
-          id,
-          userId,
-        },
+        where: whereClause,
       });
 
       if (!existingSPK) {
@@ -529,14 +549,15 @@ export class SPKController {
   static deleteSPK = asyncHandler(
     async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       const userId = req.user?.userId;
+      const userRole = req.user?.role;
       const { id } = req.params;
 
-      // Check if record exists and belongs to user
+      // Build where clause based on user role
+      const whereClause = userRole === "admin" ? { id } : { id, userId }; // Ensure user can only access their own records
+
+      // Check if record exists and user has access
       const existingSPK = await prisma.sPKRecord.findFirst({
-        where: {
-          id,
-          userId,
-        },
+        where: whereClause,
       });
 
       if (!existingSPK) {
@@ -563,19 +584,30 @@ export class SPKController {
   static getDashboardStats = asyncHandler(
     async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       const userId = req.user?.userId;
+      const userRole = req.user?.role;
+
+      // Build where clause based on user role
+      const whereClause = userRole === "admin" ? {} : { userId };
 
       const [totalSPK, recentSPK] = await Promise.all([
         prisma.sPKRecord.count({
-          where: { userId },
+          where: whereClause,
         }),
         prisma.sPKRecord.findMany({
-          where: { userId },
+          where: whereClause,
           take: 5,
           orderBy: { createdAt: "desc" },
           select: {
             id: true,
             title: true,
             createdAt: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         }),
       ]);

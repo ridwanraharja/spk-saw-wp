@@ -6,10 +6,10 @@ import { AuthenticatedRequest } from "../middlewares/auth";
 import { asyncHandler } from "../middlewares/errorHandler";
 
 export class AuthController {
-  // Register new user
+  // Register new user (admin only)
   static register = asyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-      const { email, name, password } = req.body;
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      const { email, name, password, role = "user" } = req.body;
 
       // Check if user already exists
       const existingUser = await prisma.user.findUnique({
@@ -36,6 +36,15 @@ export class AuthController {
         return;
       }
 
+      // Validate role
+      if (!["admin", "user"].includes(role)) {
+        res.status(400).json({
+          success: false,
+          message: "Role must be either 'admin' or 'user'",
+        });
+        return;
+      }
+
       // Hash password
       const hashedPassword = await PasswordUtils.hashPassword(password);
 
@@ -45,36 +54,22 @@ export class AuthController {
           email,
           name,
           password: hashedPassword,
+          role,
         },
         select: {
           id: true,
           email: true,
           name: true,
+          role: true,
           createdAt: true,
-        },
-      });
-
-      // Generate tokens
-      const tokens = JWTService.generateTokenPair({
-        userId: user.id,
-        email: user.email,
-      });
-
-      // Store refresh token
-      await prisma.refreshToken.create({
-        data: {
-          token: tokens.refreshToken,
-          userId: user.id,
-          expiresAt: JWTService.getRefreshTokenExpiry(),
         },
       });
 
       res.status(201).json({
         success: true,
-        message: "User registered successfully",
+        message: "User created successfully",
         data: {
           user,
-          tokens,
         },
       });
     }
@@ -115,6 +110,7 @@ export class AuthController {
       const tokens = JWTService.generateTokenPair({
         userId: user.id,
         email: user.email,
+        role: user.role,
       });
 
       // Store refresh token
@@ -177,6 +173,7 @@ export class AuthController {
         const tokens = JWTService.generateTokenPair({
           userId: storedToken.user.id,
           email: storedToken.user.email,
+          role: storedToken.user.role,
         });
 
         // Update refresh token
@@ -232,6 +229,7 @@ export class AuthController {
           id: true,
           email: true,
           name: true,
+          role: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -287,6 +285,7 @@ export class AuthController {
           id: true,
           email: true,
           name: true,
+          role: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -296,6 +295,227 @@ export class AuthController {
         success: true,
         message: "Profile updated successfully",
         data: { user: updatedUser },
+      });
+    }
+  );
+
+  // Admin: Get all users (admin only)
+  static getAllUsers = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: { users },
+      });
+    }
+  );
+
+  // Admin: Update user role (admin only)
+  static updateUserRole = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      const { userId } = req.params;
+      const { role } = req.body;
+
+      if (!["admin", "user"].includes(role)) {
+        res.status(400).json({
+          success: false,
+          message: "Role must be either 'admin' or 'user'",
+        });
+        return;
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+        return;
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { role },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "User role updated successfully",
+        data: { user: updatedUser },
+      });
+    }
+  );
+
+  // Admin: Delete user (admin only)
+  static deleteUser = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      const { userId } = req.params;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+        return;
+      }
+
+      // Prevent admin from deleting themselves
+      if (req.user?.userId === userId) {
+        res.status(400).json({
+          success: false,
+          message: "Cannot delete your own account",
+        });
+        return;
+      }
+
+      await prisma.user.delete({
+        where: { id: userId },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "User deleted successfully",
+      });
+    }
+  );
+
+  // Get available roles (for dropdown)
+  static getAvailableRoles = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      const roles = [
+        {
+          value: "user",
+          label: "User",
+          description: "Regular user with limited access",
+        },
+        {
+          value: "admin",
+          label: "Administrator",
+          description: "Full access to all features",
+        },
+      ];
+
+      res.status(200).json({
+        success: true,
+        data: { roles },
+      });
+    }
+  );
+
+  // Get available roles (public - no authentication required)
+  static getPublicRoles = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+      const roles = [
+        {
+          value: "user",
+          label: "User",
+          description: "Regular user with limited access",
+        },
+        {
+          value: "admin",
+          label: "Administrator",
+          description: "Full access to all features",
+        },
+      ];
+
+      res.status(200).json({
+        success: true,
+        data: { roles },
+      });
+    }
+  );
+
+  // Admin: Create new user (admin only)
+  static createUser = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      const { email, name, password, role = "user" } = req.body;
+
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUser) {
+        res.status(409).json({
+          success: false,
+          message: "User with this email already exists",
+        });
+        return;
+      }
+
+      // Validate password strength
+      const passwordValidation =
+        PasswordUtils.validatePasswordStrength(password);
+      if (!passwordValidation.isValid) {
+        res.status(400).json({
+          success: false,
+          message: "Password does not meet requirements",
+          errors: passwordValidation.errors,
+        });
+        return;
+      }
+
+      // Validate role
+      if (!["admin", "user"].includes(role)) {
+        res.status(400).json({
+          success: false,
+          message: "Role must be either 'admin' or 'user'",
+        });
+        return;
+      }
+
+      // Hash password
+      const hashedPassword = await PasswordUtils.hashPassword(password);
+
+      // Create user
+      const user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          password: hashedPassword,
+          role,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          createdAt: true,
+        },
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "User created successfully",
+        data: {
+          user,
+        },
       });
     }
   );

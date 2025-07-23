@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 export interface JWTPayload {
   userId: string;
   email: string;
+  role: string;
   iat?: number;
   exp?: number;
 }

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/authController";
-import { authenticateToken } from "../middlewares/auth";
+import { authenticateToken, requireAdmin } from "../middlewares/auth";
 // import { validate } from '../middlewares/validation';
 // import { authSchemas } from '../utils/validationSchemas';
 import rateLimit from "express-rate-limit";
@@ -32,10 +32,12 @@ const generalLimiter = rateLimit({
 
 /**
  * @swagger
- * /api/auth/register:
+ * /api/auth/admin/users:
  *   post:
- *     summary: Register a new user
- *     tags: [Authentication]
+ *     summary: Create new user (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -57,15 +59,29 @@ const generalLimiter = rateLimit({
  *               password:
  *                 type: string
  *                 minLength: 8
+ *               role:
+ *                 type: string
+ *                 enum: [admin, user]
+ *                 default: user
  *     responses:
  *       201:
- *         description: User registered successfully
+ *         description: User created successfully
  *       400:
  *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
  *       409:
  *         description: User already exists
  */
-router.post("/register", authLimiter, AuthController.register);
+router.post(
+  "/admin/users",
+  authenticateToken,
+  requireAdmin,
+  authLimiter,
+  AuthController.createUser
+);
 
 /**
  * @swagger
@@ -191,5 +207,178 @@ router.get("/profile", authenticateToken, AuthController.getProfile);
  *         description: Email already taken
  */
 router.put("/profile", authenticateToken, AuthController.updateProfile);
+
+/**
+ * @swagger
+ * /api/auth/roles:
+ *   get:
+ *     summary: Get available roles for dropdown
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Roles retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     roles:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           value:
+ *                             type: string
+ *                             enum: [user, admin]
+ *                           label:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/roles", authenticateToken, AuthController.getAvailableRoles);
+
+/**
+ * @swagger
+ * /api/auth/roles/public:
+ *   get:
+ *     summary: Get available roles for dropdown (public)
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Roles retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     roles:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           value:
+ *                             type: string
+ *                             enum: [user, admin]
+ *                           label:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ */
+router.get("/roles/public", AuthController.getPublicRoles);
+
+/**
+ * @swagger
+ * /api/auth/admin/users:
+ *   get:
+ *     summary: Get all users (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ */
+router.get(
+  "/admin/users",
+  authenticateToken,
+  requireAdmin,
+  AuthController.getAllUsers
+);
+
+/**
+ * @swagger
+ * /api/auth/admin/users/{userId}/role:
+ *   put:
+ *     summary: Update user role (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - role
+ *             properties:
+ *               role:
+ *                 type: string
+ *                 enum: [admin, user]
+ *     responses:
+ *       200:
+ *         description: User role updated successfully
+ *       400:
+ *         description: Invalid role
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ *       404:
+ *         description: User not found
+ */
+router.put(
+  "/admin/users/:userId/role",
+  authenticateToken,
+  requireAdmin,
+  AuthController.updateUserRole
+);
+
+/**
+ * @swagger
+ * /api/auth/admin/users/{userId}:
+ *   delete:
+ *     summary: Delete user (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       400:
+ *         description: Cannot delete own account
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ *       404:
+ *         description: User not found
+ */
+router.delete(
+  "/admin/users/:userId",
+  authenticateToken,
+  requireAdmin,
+  AuthController.deleteUser
+);
 
 export default router;
