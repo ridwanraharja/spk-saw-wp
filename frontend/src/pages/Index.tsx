@@ -393,7 +393,7 @@ const Index = () => {
       const response = await spkApi.getById(record.id);
       if (response.success && response.data) {
         setSelectedRecord(response.data.spkRecord);
-        setCurrentView("view-result");
+        handleViewChange("view-result");
       } else {
         throw new Error("Failed to fetch complete data");
       }
@@ -413,6 +413,25 @@ const Index = () => {
   const startNewSPK = () => {
     resetForm();
     setCurrentView("new-spk");
+  };
+
+  const handleViewChange = (
+    view:
+      | "dashboard"
+      | "new-spk"
+      | "history"
+      | "view-result"
+      | "edit-spk"
+      | "users"
+      | "create-user"
+      | "edit-user"
+      | "all-spk"
+  ) => {
+    // Reset form when navigating to new-spk
+    if (view === "new-spk") {
+      resetForm();
+    }
+    setCurrentView(view);
   };
 
   const handleLogout = async () => {
@@ -438,7 +457,7 @@ const Index = () => {
         setSawResults(fullRecord.sawResults || []);
         setWpResults(fullRecord.wpResults || []);
         setCurrentStep(1);
-        setCurrentView("edit-spk");
+        handleViewChange("edit-spk");
       } else {
         throw new Error("Failed to fetch complete data");
       }
@@ -452,7 +471,7 @@ const Index = () => {
   };
 
   const handleCreateUser = () => {
-    setCurrentView("create-user");
+    handleViewChange("create-user");
   };
 
   const handleEditUser = (user: {
@@ -463,17 +482,17 @@ const Index = () => {
     createdAt: string;
   }) => {
     setEditingUser(user);
-    setCurrentView("edit-user");
+    handleViewChange("edit-user");
   };
 
   const handleBackToUsers = () => {
-    setCurrentView("users");
+    handleViewChange("users");
     setEditingUser(null);
   };
 
   const handleViewAllSPK = (spk: SPKRecord) => {
     setSelectedRecord(spk);
-    setCurrentView("view-result");
+    handleViewChange("view-result");
   };
 
   const handleEditAllSPK = (spk: SPKRecord) => {
@@ -633,7 +652,7 @@ const Index = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setCurrentView("history")}
+                          onClick={() => handleViewChange("history")}
                         >
                           Lihat Detail
                         </Button>
@@ -672,12 +691,12 @@ const Index = () => {
                   Edit SPK
                 </h1>
                 <p className="text-slate-600 mt-1">
-                  Edit: {editingRecord?.title || "SPK"}
+                  {editingRecord?.title || "SPK"}
                 </p>
               </div>
               <Button
                 variant="outline"
-                onClick={() => setCurrentView("history")}
+                onClick={() => handleViewChange("history")}
                 className="w-full sm:w-auto"
               >
                 Kembali ke History
@@ -731,12 +750,6 @@ const Index = () => {
                   )}
                 </p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentView("history")}
-              >
-                Kembali ke Riwayat
-              </Button>
             </div>
 
             <ResultComparison
@@ -744,8 +757,8 @@ const Index = () => {
               alternatives={transformApiToForm(selectedRecord).alternatives}
               sawResults={selectedRecord.sawResults}
               wpResults={selectedRecord.wpResults}
-              onPrev={() => setCurrentView("history")}
-              onReset={() => setCurrentView("dashboard")}
+              onPrev={() => handleViewChange("history")}
+              onReset={() => handleViewChange("dashboard")}
               onSave={() => {}}
               isReadOnly={true}
             />
@@ -765,7 +778,7 @@ const Index = () => {
                   Anda tidak memiliki izin untuk mengakses halaman ini.
                 </p>
                 <Button
-                  onClick={() => setCurrentView("dashboard")}
+                  onClick={() => handleViewChange("dashboard")}
                   className="mt-4"
                 >
                   Kembali ke Dashboard
@@ -794,7 +807,7 @@ const Index = () => {
                   Anda tidak memiliki izin untuk mengakses halaman ini.
                 </p>
                 <Button
-                  onClick={() => setCurrentView("dashboard")}
+                  onClick={() => handleViewChange("dashboard")}
                   className="mt-4"
                 >
                   Kembali ke Dashboard
@@ -818,7 +831,7 @@ const Index = () => {
                   Anda tidak memiliki izin untuk mengakses halaman ini.
                 </p>
                 <Button
-                  onClick={() => setCurrentView("dashboard")}
+                  onClick={() => handleViewChange("dashboard")}
                   className="mt-4"
                 >
                   Kembali ke Dashboard
@@ -844,7 +857,7 @@ const Index = () => {
                   Anda tidak memiliki izin untuk mengakses halaman ini.
                 </p>
                 <Button
-                  onClick={() => setCurrentView("dashboard")}
+                  onClick={() => handleViewChange("dashboard")}
                   className="mt-4"
                 >
                   Kembali ke Dashboard
@@ -873,7 +886,7 @@ const Index = () => {
         <div className="hidden lg:block">
           <AdminSidebar
             currentView={currentView}
-            onViewChange={setCurrentView}
+            onViewChange={handleViewChange}
             user={user}
             onLogout={handleLogout}
           />
@@ -893,7 +906,7 @@ const Index = () => {
           <SheetContent side="left" className="p-0 w-64">
             <AdminSidebar
               currentView={currentView}
-              onViewChange={setCurrentView}
+              onViewChange={handleViewChange}
               user={user}
               onLogout={handleLogout}
               onNavigate={() => setIsMobileMenuOpen(false)}

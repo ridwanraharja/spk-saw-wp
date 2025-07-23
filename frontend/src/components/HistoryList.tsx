@@ -66,8 +66,12 @@ export const HistoryList: React.FC<HistoryListProps> = ({
     <div className="space-y-3 sm:space-y-4">
       {history.map((record) => (
         <Card
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewResult(record);
+          }}
           key={record.id}
-          className="p-4 sm:p-6 hover:shadow-md transition-shadow"
+          className="p-4 sm:p-6 hover:shadow-md transition-shadow cursor-pointer"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -107,19 +111,23 @@ export const HistoryList: React.FC<HistoryListProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onViewResult(record)}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    Lihat Hasil
-                  </DropdownMenuItem>
                   {onEditSPK && (
-                    <DropdownMenuItem onClick={() => onEditSPK(record)}>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditSPK(record);
+                      }}
+                    >
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
                   )}
                   {onDeleteRecord && (
                     <DropdownMenuItem
-                      onClick={() => onDeleteRecord(record.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteRecord(record.id);
+                      }}
                       className="text-red-600"
                       disabled={isDeleting}
                     >

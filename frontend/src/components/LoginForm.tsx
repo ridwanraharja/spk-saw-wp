@@ -131,19 +131,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             )}
           </Button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Belum punya akun?{" "}
-            <button
-              onClick={onSwitchToRegister}
-              className="text-blue-600 hover:text-blue-500 font-medium"
-              disabled={loading}
-            >
-              Daftar sekarang
-            </button>
-          </p>
-        </div>
       </CardContent>
     </Card>
   );
