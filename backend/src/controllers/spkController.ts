@@ -621,4 +621,71 @@ export class SPKController {
       });
     }
   );
+
+  // Admin: Get all SPK records with user information
+  static getAllSPKForAdmin = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      const userRole = req.user?.role;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const skip = (page - 1) * limit;
+
+      // Only admin can access this endpoint
+      if (userRole !== "admin") {
+        res.status(403).json({
+          success: false,
+          message: "Admin access required",
+        });
+        return;
+      }
+
+      const [spkRecords, total] = await Promise.all([
+        prisma.sPKRecord.findMany({
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+              },
+            },
+            criteria: true,
+            alternatives: {
+              include: {
+                alternativeValues: true,
+              },
+            },
+            sawResults: {
+              include: {
+                alternative: true,
+              },
+            },
+            wpResults: {
+              include: {
+                alternative: true,
+              },
+            },
+          },
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.sPKRecord.count(),
+      ]);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          spkRecords,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        },
+      });
+    }
+  );
 }

@@ -186,6 +186,9 @@ const startServer = async () => {
       console.log(`   • POST ${apiPrefix}/spk - Create SPK record`);
       console.log(`   • GET  ${apiPrefix}/spk - Get all SPK records`);
       console.log(`   • GET  ${apiPrefix}/spk/:id - Get SPK record by ID`);
+      console.log(
+        `   • GET  ${apiPrefix}/spk/admin/all - Get all SPK records (admin)`
+      );
       console.log(`   • PUT  ${apiPrefix}/spk/:id - Update SPK record`);
       console.log(`   • DELETE ${apiPrefix}/spk/:id - Delete SPK record`);
       console.log(

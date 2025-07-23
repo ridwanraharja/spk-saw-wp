@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { SPKController } from "../controllers/spkController";
-import { authenticateToken } from "../middlewares/auth";
+import { authenticateToken, requireAdmin } from "../middlewares/auth";
 // import { validate, validateParams } from '../middlewares/validation';
 // import { spkSchemas, commonSchemas } from '../utils/validationSchemas';
 
@@ -212,5 +212,42 @@ router.put("/:id", SPKController.updateSPK);
  *         description: SPK record not found
  */
 router.delete("/:id", SPKController.deleteSPK);
+
+/**
+ * @swagger
+ * /api/spk/admin/all:
+ *   get:
+ *     summary: Get all SPK records (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: All SPK records retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ */
+router.get(
+  "/admin/all",
+  authenticateToken,
+  requireAdmin,
+  SPKController.getAllSPKForAdmin
+);
 
 export default router;
