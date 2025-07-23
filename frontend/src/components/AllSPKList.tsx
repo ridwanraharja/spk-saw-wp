@@ -26,6 +26,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -53,18 +62,21 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
   const [spkToDelete, setSpkToDelete] = useState<SPKRecordWithUser | null>(
     null
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
 
-  // Fetch all SPK records for admin
+  // Fetch all SPK records for admin with pagination
   const {
     data: spkResponse,
     isLoading,
     error,
   } = useQuery<ApiResponse<AdminSPKResponse>>({
-    queryKey: ["all-spk"],
-    queryFn: spkApi.getAllAdmin,
+    queryKey: ["all-spk", currentPage, pageSize],
+    queryFn: () => spkApi.getAllAdmin({ page: currentPage, limit: pageSize }),
   });
 
   const spkRecords = spkResponse?.data?.spkRecords || [];
+  const pagination = spkResponse?.data?.pagination;
 
   const deleteSPKMutation = useMutation({
     mutationFn: spkApi.delete,
@@ -102,6 +114,10 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
     setSpkToDelete(null);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("id-ID", {
       year: "numeric",
@@ -110,6 +126,47 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // Generate pagination items
+  const generatePaginationItems = () => {
+    if (!pagination) return [];
+
+    const items = [];
+    const { page, totalPages } = pagination;
+
+    // Always show first page
+    if (page > 1) {
+      items.push(1);
+    }
+
+    // Show ellipsis if there's a gap
+    if (page > 3) {
+      items.push("ellipsis-start");
+    }
+
+    // Show pages around current page
+    for (
+      let i = Math.max(2, page - 1);
+      i <= Math.min(totalPages - 1, page + 1);
+      i++
+    ) {
+      if (i !== 1 && i !== totalPages) {
+        items.push(i);
+      }
+    }
+
+    // Show ellipsis if there's a gap
+    if (page < totalPages - 2) {
+      items.push("ellipsis-end");
+    }
+
+    // Always show last page
+    if (page < totalPages) {
+      items.push(totalPages);
+    }
+
+    return items;
   };
 
   if (isLoading) {
@@ -145,6 +202,13 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
             Lihat semua SPK records dari semua user dalam sistem
           </p>
         </div>
+        {pagination && (
+          <div className="text-sm text-slate-500">
+            Menampilkan {(pagination.page - 1) * pagination.limit + 1} -{" "}
+            {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+            dari {pagination.total} records
+          </div>
+        )}
       </div>
 
       {/* SPK Records Table */}
@@ -230,6 +294,53 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
             <p className="text-gray-500">Belum ada SPK records dalam sistem</p>
           </div>
         </Card>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  className={
+                    pagination.page <= 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+
+              {generatePaginationItems().map((item, index) => (
+                <PaginationItem key={index}>
+                  {item === "ellipsis-start" || item === "ellipsis-end" ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      onClick={() => handlePageChange(item as number)}
+                      isActive={pagination.page === item}
+                      className="cursor-pointer"
+                    >
+                      {item}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  className={
+                    pagination.page >= pagination.totalPages
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       )}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

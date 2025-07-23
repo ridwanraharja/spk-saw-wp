@@ -345,8 +345,18 @@ export const spkApi = {
     return ApiClient.post<SPKRecord>("/spk", data);
   },
 
-  getAllAdmin: async (): Promise<ApiResponse<AdminSPKResponse>> => {
-    return ApiClient.get<AdminSPKResponse>("/spk/admin/all");
+  getAllAdmin: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<AdminSPKResponse>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+
+    const query = queryParams.toString();
+    return ApiClient.get<AdminSPKResponse>(
+      `/spk/admin/all${query ? `?${query}` : ""}`
+    );
   },
 
   getAll: async (params?: {
