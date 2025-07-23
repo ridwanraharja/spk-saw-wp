@@ -16,6 +16,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,6 +49,10 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [spkToDelete, setSpkToDelete] = useState<SPKRecordWithUser | null>(
+    null
+  );
 
   // Fetch all SPK records for admin
   const {
@@ -60,6 +74,8 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
         description: "SPK record berhasil dihapus",
       });
       queryClient.invalidateQueries({ queryKey: ["all-spk"] });
+      setDeleteDialogOpen(false);
+      setSpkToDelete(null);
     },
     onError: (error: Error) => {
       toast({
@@ -70,10 +86,20 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
     },
   });
 
-  const handleDelete = (id: string) => {
-    if (confirm("Apakah Anda yakin ingin menghapus SPK record ini?")) {
-      deleteSPKMutation.mutate(id);
+  const handleDeleteClick = (spk: SPKRecordWithUser) => {
+    setSpkToDelete(spk);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (spkToDelete) {
+      deleteSPKMutation.mutate(spkToDelete.id);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setSpkToDelete(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -176,7 +202,7 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDelete(spk.id)}
+                        onClick={() => handleDeleteClick(spk)}
                         className="text-red-600"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -198,6 +224,30 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
           </div>
         </Card>
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda akan menghapus SPK record "{spkToDelete?.title}". Tindakan
+              ini tidak dapat dibatalkan dan akan menghapus semua data terkait
+              SPK ini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

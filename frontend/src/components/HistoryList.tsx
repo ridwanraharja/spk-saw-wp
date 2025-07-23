@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Eye,
   Calendar,
@@ -38,6 +48,27 @@ export const HistoryList: React.FC<HistoryListProps> = ({
   isDeleting = false,
   showActions = true,
 }) => {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<SPKRecord | null>(null);
+
+  const handleDeleteClick = (record: SPKRecord) => {
+    setRecordToDelete(record);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (recordToDelete && onDeleteRecord) {
+      onDeleteRecord(recordToDelete.id);
+      setDeleteDialogOpen(false);
+      setRecordToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setRecordToDelete(null);
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-8 sm:py-12">
@@ -126,7 +157,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation();
-                        onDeleteRecord(record.id);
+                        handleDeleteClick(record);
                       }}
                       className="text-red-600"
                       disabled={isDeleting}
@@ -145,6 +176,30 @@ export const HistoryList: React.FC<HistoryListProps> = ({
           </div>
         </Card>
       ))}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda akan menghapus SPK "{recordToDelete?.title}". Tindakan ini
+              tidak dapat dibatalkan dan akan menghapus semua data terkait SPK
+              ini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
