@@ -10,21 +10,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, AlertCircle, Edit } from "lucide-react";
 import { Criterion } from "@/pages/Index";
+import { SubCriteria } from "@/lib/api";
+import { SubCriteriaDisplay } from "@/components/SubCriteriaDisplay";
+import { SubCriteriaEditor } from "@/components/SubCriteriaEditor";
+import { useSubCriteria } from "@/hooks/useSubCriteria";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 interface CriteriaFormProps {
   criteria: Criterion[];
   setCriteria: (criteria: Criterion[]) => void;
   onNext: () => void;
+  isEditing?: boolean; // New prop to determine edit vs create mode
 }
 
 export const CriteriaForm: React.FC<CriteriaFormProps> = ({
   criteria,
   setCriteria,
   onNext,
+  isEditing = false,
 }) => {
   const [totalWeight, setTotalWeight] = useState(0);
+  const [editingCriterionId, setEditingCriterionId] = useState<string | null>(null);
+  const { getDefaultTemplate, subCriteria: defaultSubCriteria } = useSubCriteria({ loadOnMount: true });
 
   useEffect(() => {
     const total = criteria.reduce(
@@ -40,6 +49,7 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
       name: "",
       weight: 0,
       type: "benefit",
+      subCriteria: [...defaultSubCriteria], // Initialize with default sub-criteria
     };
     setCriteria([...criteria, newCriterion]);
   };
@@ -54,6 +64,11 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
         criterion.id === id ? { ...criterion, ...updates } : criterion
       )
     );
+  };
+
+  const updateCriterionSubCriteria = (criterionId: string, subCriteria: SubCriteria[]) => {
+    updateCriterion(criterionId, { subCriteria });
+    setEditingCriterionId(null);
   };
 
   const canProceed = () => {
@@ -165,6 +180,31 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
+
+            {/* Sub-criteria section */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              {criterion.subCriteria && criterion.subCriteria.length > 0 ? (
+                <SubCriteriaDisplay
+                  subCriteria={criterion.subCriteria}
+                  criterionName={criterion.name}
+                  onEdit={() => setEditingCriterionId(criterion.id)}
+                  showEditButton={true}
+                />
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Sub-kriteria belum diatur</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingCriterionId(criterion.id)}
+                    className="h-7 px-2"
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Atur Sub-kriteria
+                  </Button>
+                </div>
+              )}
+            </div>
           </Card>
         ))}
       </div>
@@ -208,6 +248,39 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
           Lanjut ke Input Alternatif
         </Button>
       </div>
+
+      {/* Sub-criteria Editor Dialog */}
+      {editingCriterionId && (
+        <Dialog 
+          open={!!editingCriterionId} 
+          onOpenChange={(open) => !open && setEditingCriterionId(null)}
+        >
+          <DialogContent className="max-w-2xl">
+            {(() => {
+              const criterion = criteria.find(c => c.id === editingCriterionId);
+              return (
+                <SubCriteriaEditor
+                  criterionId={editingCriterionId}
+                  criterionName={criterion?.name || ''}
+                  initialSubCriteria={criterion?.subCriteria}
+                  onSave={(subCriteria) => updateCriterionSubCriteria(editingCriterionId, subCriteria)}
+                  onCancel={() => setEditingCriterionId(null)}
+                  isNewCriterion={(() => {
+                    // Check if it's a truly new criterion that hasn't been saved to DB yet
+                    if (!isEditing) {
+                      // In create mode, all criteria are new
+                      return true;
+                    } else {
+                      // In edit mode, check if criterion was newly added (has temporary ID or no spkId)
+                      return !criterion?.spkId || criterion?.id.startsWith('criterion-');
+                    }
+                  })()} 
+                />
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

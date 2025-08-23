@@ -34,12 +34,21 @@ export interface ApiResponse<T = unknown> {
   errors?: string[];
 }
 
+export interface SubCriteria {
+  id: string;
+  criterionId: string;
+  label: string;
+  value: number;
+  order: number;
+}
+
 export interface Criterion {
   id: string;
   spkId?: string;
   name: string;
   weight: number;
   type: "benefit" | "cost";
+  subCriteria?: SubCriteria[];
 }
 
 export interface AlternativeValue {
@@ -118,6 +127,11 @@ export interface CreateSPKData {
     name: string;
     weight: number;
     type: "benefit" | "cost";
+    subCriteria?: Array<{
+      label: string;
+      value: number;
+      order: number;
+    }>;
   }>;
   alternatives: Array<{
     name: string;
@@ -131,6 +145,11 @@ export interface UpdateSPKData {
     name: string;
     weight: number;
     type: "benefit" | "cost";
+    subCriteria?: Array<{
+      label: string;
+      value: number;
+      order: number;
+    }>;
   }>;
   alternatives?: Array<{
     name: string;
@@ -448,6 +467,55 @@ export const userApi = {
         description: string;
       }>;
     }>("/auth/roles");
+  },
+};
+
+export const subCriteriaApi = {
+  getDefaultTemplate: async (): Promise<ApiResponse<{
+    subCriteria: Array<{
+      label: string;
+      value: number;
+      order: number;
+    }>;
+  }>> => {
+    return ApiClient.get<{
+      subCriteria: Array<{
+        label: string;
+        value: number;
+        order: number;
+      }>;
+    }>("/sub-criteria");
+  },
+
+  getSubCriteria: async (
+    criterionId: string
+  ): Promise<ApiResponse<{
+    criterionId: string;
+    subCriteria: SubCriteria[];
+  }>> => {
+    return ApiClient.get<{
+      criterionId: string;
+      subCriteria: SubCriteria[];
+    }>(`/sub-criteria/${criterionId}`);
+  },
+
+  updateSubCriteria: async (
+    criterionId: string,
+    subCriteria: Array<{
+      label: string;
+      value: number;
+      order: number;
+    }>
+  ): Promise<ApiResponse<{
+    criterionId: string;
+    subCriteria: SubCriteria[];
+  }>> => {
+    return ApiClient.put<{
+      criterionId: string;
+      subCriteria: SubCriteria[];
+    }>(`/sub-criteria/${criterionId}`, {
+      subCriteria,
+    });
   },
 };
 

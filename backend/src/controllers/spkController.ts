@@ -19,6 +19,7 @@ export class SPKController {
           name: string;
           weight: number;
           type: "benefit" | "cost";
+          subCriteria?: Array<{label: string; value: number; order: number}>;
         }) => ({
           ...criterion,
           id: criterion.id || uuidv4(),
@@ -33,6 +34,7 @@ export class SPKController {
           name: string;
           weight: number;
           type: "benefit" | "cost";
+          subCriteria?: Array<{label: string; value: number; order: number}>;
         }) => {
           criterionNameToId.set(criterion.name, criterion.id);
         }
@@ -110,6 +112,7 @@ export class SPKController {
               name: string;
               weight: number;
               type: "benefit" | "cost";
+              subCriteria?: Array<{label: string; value: number; order: number}>;
             }) =>
               tx.criterion.create({
                 data: {
@@ -122,6 +125,46 @@ export class SPKController {
               })
           )
         );
+
+        // Create sub-criteria for each criterion
+        for (const criterion of criteriaWithIds) {
+          if (criterion.subCriteria && criterion.subCriteria.length > 0) {
+            await Promise.all(
+              criterion.subCriteria.map((subCriterion: {label: string; value: number; order: number}) =>
+                tx.subCriteria.create({
+                  data: {
+                    criterionId: criterion.id,
+                    label: subCriterion.label,
+                    value: subCriterion.value,
+                    order: subCriterion.order,
+                  },
+                })
+              )
+            );
+          } else {
+            // Create default sub-criteria if none provided
+            const defaultSubCriteria = [
+              { label: "Sangat Rendah", value: 1, order: 1 },
+              { label: "Rendah", value: 2, order: 2 },
+              { label: "Sedang", value: 3, order: 3 },
+              { label: "Tinggi", value: 4, order: 4 },
+              { label: "Sangat Tinggi", value: 5, order: 5 }
+            ];
+            
+            await Promise.all(
+              defaultSubCriteria.map(subCriterion =>
+                tx.subCriteria.create({
+                  data: {
+                    criterionId: criterion.id,
+                    label: subCriterion.label,
+                    value: subCriterion.value,
+                    order: subCriterion.order,
+                  },
+                })
+              )
+            );
+          }
+        }
 
         // Create alternatives using the pre-generated IDs
         const createdAlternatives = await Promise.all(
@@ -229,7 +272,13 @@ export class SPKController {
                 email: true,
               },
             },
-            criteria: true,
+            criteria: {
+              include: {
+                subCriteria: {
+                  orderBy: { order: 'asc' }
+                }
+              }
+            },
             alternatives: {
               include: {
                 alternativeValues: true,
@@ -280,7 +329,13 @@ export class SPKController {
               email: true,
             },
           },
-          criteria: true,
+          criteria: {
+            include: {
+              subCriteria: {
+                orderBy: { order: 'asc' }
+              }
+            }
+          },
           alternatives: {
             include: {
               alternativeValues: {
@@ -354,6 +409,7 @@ export class SPKController {
             name: string;
             weight: number;
             type: "benefit" | "cost";
+            subCriteria?: Array<{label: string; value: number; order: number}>;
           }) => ({
             ...criterion,
             id: criterion.id || uuidv4(),
@@ -368,6 +424,7 @@ export class SPKController {
             name: string;
             weight: number;
             type: "benefit" | "cost";
+            subCriteria?: Array<{label: string; value: number; order: number}>;
           }) => {
             criterionNameToId.set(criterion.name, criterion.id);
           }
@@ -436,6 +493,9 @@ export class SPKController {
           await tx.sAWResult.deleteMany({ where: { spkId: id } });
           await tx.wPResult.deleteMany({ where: { spkId: id } });
           await tx.alternative.deleteMany({ where: { spkId: id } });
+          await tx.subCriteria.deleteMany({ 
+            where: { criterion: { spkId: id } } 
+          });
           await tx.criterion.deleteMany({ where: { spkId: id } });
 
           // Recalculate results using the transformed data
@@ -456,6 +516,7 @@ export class SPKController {
                 name: string;
                 weight: number;
                 type: "benefit" | "cost";
+                subCriteria?: Array<{label: string; value: number; order: number}>;
               }) =>
                 tx.criterion.create({
                   data: {
@@ -468,6 +529,46 @@ export class SPKController {
                 })
             )
           );
+
+          // Recreate sub-criteria for each criterion
+          for (const criterion of criteriaWithIds) {
+            if (criterion.subCriteria && criterion.subCriteria.length > 0) {
+              await Promise.all(
+                criterion.subCriteria.map((subCriterion: {label: string; value: number; order: number}) =>
+                  tx.subCriteria.create({
+                    data: {
+                      criterionId: criterion.id,
+                      label: subCriterion.label,
+                      value: subCriterion.value,
+                      order: subCriterion.order,
+                    },
+                  })
+                )
+              );
+            } else {
+              // Create default sub-criteria if none provided
+              const defaultSubCriteria = [
+                { label: "Sangat Rendah", value: 1, order: 1 },
+                { label: "Rendah", value: 2, order: 2 },
+                { label: "Sedang", value: 3, order: 3 },
+                { label: "Tinggi", value: 4, order: 4 },
+                { label: "Sangat Tinggi", value: 5, order: 5 }
+              ];
+              
+              await Promise.all(
+                defaultSubCriteria.map(subCriterion =>
+                  tx.subCriteria.create({
+                    data: {
+                      criterionId: criterion.id,
+                      label: subCriterion.label,
+                      value: subCriterion.value,
+                      order: subCriterion.order,
+                    },
+                  })
+                )
+              );
+            }
+          }
 
           const createdAlternatives = await Promise.all(
             alternativesWithIds.map(
@@ -650,7 +751,13 @@ export class SPKController {
                 role: true,
               },
             },
-            criteria: true,
+            criteria: {
+              include: {
+                subCriteria: {
+                  orderBy: { order: 'asc' }
+                }
+              }
+            },
             alternatives: {
               include: {
                 alternativeValues: true,

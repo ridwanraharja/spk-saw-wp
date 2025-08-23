@@ -73,8 +73,24 @@ model Criterion {
   // Relations
   spkRecord        SPKRecord          @relation(fields: [spkId], references: [id], onDelete: Cascade)
   alternativeValues AlternativeValue[]
+  subCriteria      SubCriteria[]
 
   @@map("criteria")
+}
+
+// Sub-criteria for each criterion (dynamic labels for 1-5 scale)
+model SubCriteria {
+  id          String @id @default(uuid())
+  criterionId String
+  label       String
+  value       Int    // 1-5 scale
+  order       Int    // for ordering display
+
+  // Relations
+  criterion Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  @@unique([criterionId, value])
+  @@map("sub_criteria")
 }
 
 // Alternative model - alternatives to be evaluated

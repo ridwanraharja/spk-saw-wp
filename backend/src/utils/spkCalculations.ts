@@ -1,11 +1,17 @@
 // SPK (Sistem Pendukung Keputusan) Calculations
 // Implements SAW (Simple Additive Weighting) and WP (Weighted Product) methods
 
+export interface SubCriteria {
+  label: string;
+  value: number;
+}
+
 export interface Criterion {
   id: string;
   name: string;
   weight: number;
   type: "benefit" | "cost";
+  subCriteria?: SubCriteria[];
 }
 
 export interface Alternative {
@@ -22,6 +28,42 @@ export interface SPKResult {
 }
 
 export class SPKCalculator {
+  // Default 5-level sub-criteria classification
+  static getDefaultSubCriteria(): SubCriteria[] {
+    return [
+      { label: "Sangat Rendah", value: 1 },
+      { label: "Rendah", value: 2 },
+      { label: "Sedang", value: 3 },
+      { label: "Tinggi", value: 4 },
+      { label: "Sangat Tinggi", value: 5 }
+    ];
+  }
+
+  // Validate sub-criteria values (1-5 range)
+  static validateSubCriteriaValues(
+    criteria: Criterion[],
+    alternatives: Alternative[]
+  ): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    alternatives.forEach(alternative => {
+      criteria.forEach(criterion => {
+        const value = alternative.values[criterion.id];
+        
+        if (!Number.isInteger(value) || value < 1 || value > 5) {
+          errors.push(
+            `Invalid sub-criteria value for ${alternative.name} - ${criterion.name}. Expected integer 1-5, got ${value}`
+          );
+        }
+      });
+    });
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
   // SAW (Simple Additive Weighting) Method
   static calculateSAW(
     criteria: Criterion[],
@@ -184,17 +226,11 @@ export class SPKCalculator {
       });
     });
 
-    // Check for positive values
-    alternatives.forEach((alternative) => {
-      criteria.forEach((criterion) => {
-        const value = alternative.values[criterion.id];
-        if (value <= 0) {
-          errors.push(
-            `All values must be positive. Found ${value} for ${alternative.name} - ${criterion.name}`
-          );
-        }
-      });
-    });
+    // Validate sub-criteria values (1-5 range)
+    const subCriteriaValidation = this.validateSubCriteriaValues(criteria, alternatives);
+    if (!subCriteriaValidation.isValid) {
+      errors.push(...subCriteriaValidation.errors);
+    }
 
     return {
       isValid: errors.length === 0,

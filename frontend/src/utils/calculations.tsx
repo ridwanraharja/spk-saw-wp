@@ -1,15 +1,50 @@
 import { Criterion, Alternative, SAWResult, WPResult } from "@/lib/api";
 
+// Validate sub-criteria values (1-5 range)
+export const validateSubCriteriaValues = (
+  criteria: Criterion[],
+  alternatives: Alternative[]
+): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
+  alternatives.forEach((alternative) => {
+    criteria.forEach((criterion) => {
+      const value = alternative.values?.[criterion.id];
+      
+      if (value === undefined || value === null) {
+        errors.push(
+          `Missing value for ${alternative.name} - ${criterion.name}`
+        );
+      } else if (!Number.isInteger(value) || value < 1 || value > 5) {
+        errors.push(
+          `Invalid sub-criteria value for ${alternative.name} - ${criterion.name}. Expected integer 1-5, got ${value}`
+        );
+      }
+    });
+  });
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
 export const calculateSAW = (
   criteria: Criterion[],
   alternatives: Alternative[]
 ): SAWResult[] => {
-  // Step 1: Create decision matrix
+  // Step 1: Validate sub-criteria values
+  const validation = validateSubCriteriaValues(criteria, alternatives);
+  if (!validation.isValid) {
+    console.warn('Sub-criteria validation errors:', validation.errors);
+  }
+
+  // Step 2: Create decision matrix
   const matrix: number[][] = alternatives.map((alt) =>
-    criteria.map((crit) => alt.values[crit.id] || 0)
+    criteria.map((crit) => alt.values?.[crit.id] || 0)
   );
 
-  // Step 2: Normalize decision matrix
+  // Step 3: Normalize decision matrix
   const normalizedMatrix: number[][] = matrix.map((row, i) =>
     row.map((value, j) => {
       const criterion = criteria[j];
@@ -25,7 +60,7 @@ export const calculateSAW = (
     })
   );
 
-  // Step 3: Calculate preference values
+  // Step 4: Calculate preference values
   const preferenceValues = normalizedMatrix.map((row) =>
     row.reduce(
       (sum, normalizedValue, j) => sum + normalizedValue * criteria[j].weight,
@@ -33,7 +68,7 @@ export const calculateSAW = (
     )
   );
 
-  // Step 4: Create results with ranking
+  // Step 5: Create results with ranking
   const results: SAWResult[] = alternatives.map((alt, i) => ({
     id: `saw-${alt.id}-${Date.now()}`,
     spkId: `spk-${Date.now()}`,
@@ -55,17 +90,23 @@ export const calculateWP = (
   criteria: Criterion[],
   alternatives: Alternative[]
 ): WPResult[] => {
-  // Step 1: Calculate relative weights (same as backend)
+  // Step 1: Validate sub-criteria values
+  const validation = validateSubCriteriaValues(criteria, alternatives);
+  if (!validation.isValid) {
+    console.warn('Sub-criteria validation errors:', validation.errors);
+  }
+
+  // Step 2: Calculate relative weights (same as backend)
   const totalWeight = criteria.reduce((sum, crit) => sum + crit.weight, 0);
   const relativeWeights = criteria.map((crit) => crit.weight / totalWeight);
 
-  // Step 2: Calculate Si values (same as backend)
+  // Step 3: Calculate Si values (same as backend)
   const scores = alternatives.map((alternative) => {
     let siValue = 1;
 
     relativeWeights.forEach((relativeWeight, index) => {
       const criterion = criteria[index];
-      const value = alternative.values[criterion.id] || 0;
+      const value = alternative.values?.[criterion.id] || 0;
 
       if (value > 0) {
         if (criterion.type === "benefit") {
@@ -83,19 +124,19 @@ export const calculateWP = (
     };
   });
 
-  // Step 3: Calculate Vi values (preference values) - same as backend
+  // Step 4: Calculate Vi values (preference values) - same as backend
   const totalSi = scores.reduce((sum, score) => sum + score.score, 0);
   scores.forEach((score) => {
     score.score = score.score / totalSi;
   });
 
-  // Step 4: Sort by score (descending) and assign ranks (same as backend)
+  // Step 5: Sort by score (descending) and assign ranks (same as backend)
   scores.sort((a, b) => b.score - a.score);
   scores.forEach((result, index) => {
     result.rank = index + 1;
   });
 
-  // Step 5: Create results with proper types
+  // Step 6: Create results with proper types
   const results: WPResult[] = scores.map((score) => ({
     id: `wp-${score.alternativeId}-${Date.now()}`,
     spkId: `spk-${Date.now()}`,

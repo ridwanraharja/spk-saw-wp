@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { Criterion, Alternative } from '@/pages/Index';
+import { SubCriteriaGrid } from '@/components/SubCriteriaGrid';
+import { useSubCriteria } from '@/hooks/useSubCriteria';
 
 interface AlternativeFormProps {
   criteria: Criterion[];
@@ -44,12 +46,15 @@ export const AlternativeForm: React.FC<AlternativeFormProps> = ({
   };
 
   const updateAlternativeValue = (alternativeId: string, criterionId: string, value: number) => {
+    // Ensure value is within 1-5 range for sub-criteria
+    const clampedValue = Math.max(1, Math.min(5, Math.round(value)));
+    
     setAlternatives(
       alternatives.map(alternative =>
         alternative.id === alternativeId
           ? {
               ...alternative,
-              values: { ...alternative.values, [criterionId]: value },
+              values: { ...alternative.values, [criterionId]: clampedValue },
             }
           : alternative
       )
@@ -63,7 +68,8 @@ export const AlternativeForm: React.FC<AlternativeFormProps> = ({
         alternative.name.trim() !== '' &&
         criteria.every(criterion => 
           alternative.values[criterion.id] !== undefined && 
-          alternative.values[criterion.id] > 0
+          alternative.values[criterion.id] >= 1 && 
+          alternative.values[criterion.id] <= 5
         )
       )
     );
@@ -74,7 +80,7 @@ export const AlternativeForm: React.FC<AlternativeFormProps> = ({
       <div className="text-center">
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Input Alternatif dan Nilai</h2>
         <p className="text-slate-600">
-          Masukkan alternatif yang akan dinilai beserta nilai untuk setiap kriteria
+          Masukkan alternatif yang akan dinilai beserta nilai untuk setiap kriteria (skala 1-5)
         </p>
       </div>
 
@@ -111,34 +117,50 @@ export const AlternativeForm: React.FC<AlternativeFormProps> = ({
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-6">
                 {criteria.map((criterion) => (
-                  <div key={criterion.id}>
-                    <Label 
-                      htmlFor={`value-${alternative.id}-${criterion.id}`} 
-                      className="text-sm font-medium"
-                    >
-                      {criterion.name}
-                    </Label>
-                    <Input
-                      id={`value-${alternative.id}-${criterion.id}`}
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="Masukkan nilai"
-                      value={alternative.values[criterion.id] || ''}
-                      onChange={(e) => 
-                        updateAlternativeValue(
-                          alternative.id, 
-                          criterion.id, 
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="mt-1"
-                    />
-                    <p className="text-xs text-slate-500 mt-1">
-                      Tipe: {criterion.type === 'benefit' ? 'Benefit' : 'Cost'}
-                    </p>
+                  <div key={criterion.id} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">
+                        {criterion.name}
+                      </Label>
+                      <span className="text-xs text-slate-500">
+                        Tipe: {criterion.type === 'benefit' ? 'Benefit' : 'Cost'}
+                      </span>
+                    </div>
+                    
+                    {criterion.subCriteria && criterion.subCriteria.length > 0 ? (
+                      <SubCriteriaGrid
+                        subCriteria={criterion.subCriteria}
+                        value={alternative.values[criterion.id] || 0}
+                        onValueChange={(value) => updateAlternativeValue(alternative.id, criterion.id, value)}
+                        criterionName={criterion.name}
+                        alternativeName={alternative.name}
+                        size="sm"
+                      />
+                    ) : (
+                      <div className="space-y-2">
+                        <Input
+                          type="number"
+                          min="1"
+                          max="5"
+                          step="1"
+                          placeholder="Pilih nilai 1-5"
+                          value={alternative.values[criterion.id] || ''}
+                          onChange={(e) => 
+                            updateAlternativeValue(
+                              alternative.id, 
+                              criterion.id, 
+                              parseInt(e.target.value) || 1
+                            )
+                          }
+                          className="w-24"
+                        />
+                        <p className="text-xs text-slate-500">
+                          Masukkan nilai 1-5 (sub-kriteria belum diatur)
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

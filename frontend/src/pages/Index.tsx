@@ -39,6 +39,7 @@ import {
 import type {
   Criterion as APICriterion,
   Alternative as APIAlternative,
+  SubCriteria,
   SAWResult,
   WPResult,
   CreateSPKData,
@@ -48,9 +49,11 @@ import type {
 // Local types for form components (simpler structure)
 export interface Criterion {
   id: string;
+  spkId?: string;
   name: string;
   weight: number;
   type: "benefit" | "cost";
+  subCriteria?: SubCriteria[];
 }
 
 export interface Alternative {
@@ -63,9 +66,11 @@ export interface Alternative {
 const transformApiToForm = (record: SPKRecord) => {
   const criteria: Criterion[] = record.criteria.map((c) => ({
     id: c.id,
+    spkId: c.spkId,
     name: c.name,
     weight: c.weight,
     type: c.type,
+    subCriteria: c.subCriteria,
   }));
 
   const alternatives: Alternative[] = record.alternatives.map((alt) => {
@@ -106,6 +111,11 @@ const transformFormToApi = (
     name: c.name,
     weight: c.weight,
     type: c.type,
+    subCriteria: c.subCriteria ? c.subCriteria.map(sc => ({
+      label: sc.label,
+      value: sc.value,
+      order: sc.order,
+    })) : undefined,
   }));
 
   console.log(alternatives);
@@ -504,6 +514,8 @@ const Index = () => {
   };
 
   const renderStepContent = () => {
+    const isEditingMode = currentView === "edit-spk";
+    
     switch (currentStep) {
       case 1:
         return (
@@ -511,6 +523,7 @@ const Index = () => {
             criteria={criteria}
             setCriteria={setCriteria}
             onNext={handleNextStep}
+            isEditing={isEditingMode}
           />
         );
       case 2:
