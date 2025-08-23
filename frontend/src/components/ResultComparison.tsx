@@ -34,6 +34,7 @@ import {
   Info,
 } from "lucide-react";
 import { RankingAnalysis } from "./RankingAnalysis";
+import { useNavigate } from "react-router-dom";
 
 interface ResultComparisonProps {
   criteria: Criterion[];
@@ -64,6 +65,7 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
   isEditing = false,
   currentTitle = "",
 }) => {
+  const navigate = useNavigate();
   const [saveTitle, setSaveTitle] = useState(currentTitle);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
@@ -105,6 +107,7 @@ export const ResultComparison: React.FC<ResultComparisonProps> = ({
       onSave(saveTitle.trim());
       setShowSaveDialog(false);
       setSaveTitle("");
+      navigate("/history");
     }
   };
 

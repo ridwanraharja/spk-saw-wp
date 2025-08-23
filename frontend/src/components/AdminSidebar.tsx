@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -54,24 +55,29 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   totalSPK = 0,
   isMobile = false,
 }) => {
+  const navigate = useNavigate();
+
   const regularMenuItems = [
     {
       id: "dashboard" as const,
       label: "Dashboard",
       icon: Home,
       description: "Ringkasan & statistik",
+      path: "/dashboard",
     },
     {
       id: "new-spk" as const,
       label: "SPK Baru",
       icon: Plus,
       description: "Buat analisis baru",
+      path: "/new-spk",
     },
     {
       id: "history" as const,
       label: "History",
       icon: History,
       description: "Riwayat SPK",
+      path: "/history",
     },
   ];
 
@@ -83,12 +89,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             label: "Users",
             icon: Users,
             description: "Kelola user",
+            path: "/users",
           },
           {
             id: "all-spk" as const,
             label: "All SPK",
             icon: Database,
             description: "Lihat semua SPK",
+            path: "/all-spk",
           },
         ]
       : [];
@@ -131,7 +139,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   : "text-slate-700 hover:bg-slate-100"
               }`}
               onClick={() => {
-                onViewChange(item.id);
+                navigate(item.path);
                 onNavigate?.();
               }}
             >
@@ -182,7 +190,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       : "text-slate-700 hover:bg-orange-50 border-l-2 border-orange-200"
                   }`}
                   onClick={() => {
-                    onViewChange(item.id);
+                    navigate(item.path);
                     onNavigate?.();
                   }}
                 >

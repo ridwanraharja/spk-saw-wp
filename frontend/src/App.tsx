@@ -8,9 +8,18 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 // Pages
-import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Layout from "./components/Layout";
+import Dashboard from "./pages/Dashboard";
+import NewSPK from "./pages/NewSPK";
+import History from "./pages/History";
+import ViewResult from "./pages/ViewResult";
+import EditSPK from "./pages/EditSPK";
+import Users from "./pages/Users";
+import CreateUser from "./pages/CreateUser";
+import EditUser from "./pages/EditUser";
+import AllSPK from "./pages/AllSPK";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,18 +88,26 @@ const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* Protected Routes */}
+      {/* Protected Routes with Layout */}
       <Route
-        path="/dashboard"
+        path="/"
         element={
           <ProtectedRoute>
-            <Index />
+            <Layout />
           </ProtectedRoute>
         }
-      />
-
-      {/* Root redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      >
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="new-spk" element={<NewSPK />} />
+        <Route path="history" element={<History />} />
+        <Route path="result/:id" element={<ViewResult />} />
+        <Route path="edit-spk/:id" element={<EditSPK />} />
+        <Route path="users" element={<Users />} />
+        <Route path="create-user" element={<CreateUser />} />
+        <Route path="edit-user/:id" element={<EditUser />} />
+        <Route path="all-spk" element={<AllSPK />} />
+      </Route>
 
       {/* Catch-all 404 route */}
       <Route path="*" element={<NotFound />} />
@@ -105,11 +122,9 @@ const App: React.FC = () => {
       <TooltipProvider>
         <AuthProvider>
           <BrowserRouter>
-            <div className="min-h-screen bg-gray-50">
-              <Suspense fallback={<LoadingScreen />}>
-                <AppRoutes />
-              </Suspense>
-            </div>
+            <Suspense fallback={<LoadingScreen />}>
+              <AppRoutes />
+            </Suspense>
             <Toaster />
             <Sonner />
           </BrowserRouter>
