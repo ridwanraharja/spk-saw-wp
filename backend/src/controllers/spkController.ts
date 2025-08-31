@@ -490,6 +490,7 @@ export class SPKController {
             name: string;
             weight: number;
             type: "benefit" | "cost";
+            templateCriterionId?: string;
             subCriteria?: Array<{
               label: string;
               value: number;
@@ -586,6 +587,8 @@ export class SPKController {
                 name: string;
                 weight: number;
                 type: "benefit" | "cost";
+                order?: number;
+                templateCriterionId?: string;
                 subCriteria?: Array<{
                   label: string;
                   value: number;
@@ -651,7 +654,7 @@ export class SPKController {
             }
           }
 
-          const createdAlternatives = await Promise.all(
+          await Promise.all(
             alternativesWithIds.map(
               (alternative: {
                 id: string;
