@@ -24,8 +24,9 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  spkRecords    SPKRecord[]
-  refreshTokens RefreshToken[]
+  spkRecords       SPKRecord[]
+  refreshTokens    RefreshToken[]
+  createdTemplates SPKTemplate[] // Templates created by admin
 
   @@map("users")
 }
@@ -44,17 +45,69 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-// SPK Record model - main record for each SPK analysis
+// SPK Template model - templates created by admin
+model SPKTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String?  // e.g., "Employee Selection", "Vendor Selection", etc.
+  isActive    Boolean  @default(true)
+  createdBy   String   // Admin who created this template
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  creator         User                    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  templateCriteria TemplateCriterion[]
+  spkRecords      SPKRecord[]             // Records using this template
+
+  @@map("spk_templates")
+}
+
+// Template Criterion - criteria defined in templates
+model TemplateCriterion {
+  id          String @id @default(uuid())
+  templateId  String
+  name        String
+  weight      Float
+  type        String // 'benefit' or 'cost'
+  order       Int    // for ordering display
+
+  // Relations
+  template           SPKTemplate           @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateSubCriteria TemplateSubCriteria[]
+
+  @@map("template_criteria")
+}
+
+// Template Sub-criteria - sub-criteria defined in templates
+model TemplateSubCriteria {
+  id                   String @id @default(uuid())
+  templateCriterionId  String
+  label                String
+  value                Int    // 1-5 scale
+  order                Int    // for ordering display
+
+  // Relations
+  templateCriterion TemplateCriterion @relation(fields: [templateCriterionId], references: [id], onDelete: Cascade)
+
+  @@unique([templateCriterionId, value])
+  @@map("template_sub_criteria")
+}
+
+// SPK Record model - main record for each SPK analysis (now uses templates)
 model SPKRecord {
-  id        String   @id @default(uuid())
-  userId    String
-  title     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String  @id @default(uuid())
+  userId     String
+  templateId String? // Reference to template used (optional for backward compatibility)
+  title      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  criteria     Criterion[]
+  template     SPKTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  criteria     Criterion[]   // Actual criteria used (copied from template or custom)
   alternatives Alternative[]
   sawResults   SAWResult[]
   wpResults    WPResult[]
@@ -62,23 +115,25 @@ model SPKRecord {
   @@map("spk_records")
 }
 
-// Criterion model - criteria for evaluation
+// Criterion model - criteria for evaluation (now can be copied from template)
 model Criterion {
-  id      String @id @default(uuid())
-  spkId   String
-  name    String
-  weight  Float
-  type    String // 'benefit' or 'cost'
+  id                   String  @id @default(uuid())
+  spkId                String
+  templateCriterionId  String? // Reference to original template criterion
+  name                 String
+  weight               Float
+  type                 String  // 'benefit' or 'cost'
+  order                Int     // for ordering display
 
   // Relations
-  spkRecord        SPKRecord          @relation(fields: [spkId], references: [id], onDelete: Cascade)
+  spkRecord         SPKRecord          @relation(fields: [spkId], references: [id], onDelete: Cascade)
   alternativeValues AlternativeValue[]
-  subCriteria      SubCriteria[]
+  subCriteria       SubCriteria[]
 
   @@map("criteria")
 }
 
-// Sub-criteria for each criterion (dynamic labels for 1-5 scale)
+// Sub-criteria for each criterion (copied from template or custom)
 model SubCriteria {
   id          String @id @default(uuid())
   criterionId String

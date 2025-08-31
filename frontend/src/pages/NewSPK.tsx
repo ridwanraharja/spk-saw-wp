@@ -6,9 +6,19 @@ import { AlternativeForm } from "@/components/AlternativeForm";
 import { ReviewData } from "@/components/ReviewData";
 import { ResultComparison } from "@/components/ResultComparison";
 import { useToast } from "@/hooks/use-toast";
-import { spkApi, SAWResult, WPResult, CreateSPKData } from "@/lib/api";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  spkApi,
+  templateApi,
+  SAWResult,
+  WPResult,
+  CreateSPKData,
+  SPKTemplate,
+} from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SubCriteria } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export interface Criterion {
   id: string;
@@ -28,7 +38,8 @@ export interface Alternative {
 const transformFormToApi = (
   title: string,
   criteria: Criterion[],
-  alternatives: Alternative[]
+  alternatives: Alternative[],
+  templateId?: string
 ): CreateSPKData => {
   const apiCriteria = criteria.map((c) => ({
     name: c.name,
@@ -60,13 +71,17 @@ const transformFormToApi = (
 
   return {
     title,
-    criteria: apiCriteria,
+    templateId,
+    criteria: templateId ? undefined : apiCriteria,
     alternatives: apiAlternatives,
   };
 };
 
 const NewSPK = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // Start at 0 for template selection
+  const [selectedTemplate, setSelectedTemplate] = useState<SPKTemplate | null>(
+    null
+  );
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [sawResults, setSawResults] = useState<SAWResult[]>([]);
@@ -76,7 +91,20 @@ const NewSPK = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Fetch active templates
+  const { data: templatesData } = useQuery({
+    queryKey: ["active-templates"],
+    queryFn: () => templateApi.getActiveTemplates(),
+  });
+
+  const templates = templatesData?.data?.templates || [];
+
   const steps = [
+    {
+      number: 0,
+      title: "Pilih Template",
+      description: "Pilih template atau buat manual",
+    },
     {
       number: 1,
       title: "Input Kriteria",
@@ -134,6 +162,32 @@ const NewSPK = () => {
     },
   });
 
+  const handleTemplateSelect = (template: SPKTemplate | null) => {
+    setSelectedTemplate(template);
+
+    if (template) {
+      // Convert template criteria to form criteria
+      const formCriteria: Criterion[] = template.templateCriteria.map((tc) => ({
+        id: tc.id,
+        name: tc.name,
+        weight: tc.weight,
+        type: tc.type,
+        subCriteria: tc.templateSubCriteria.map((tsc) => ({
+          id: tsc.id,
+          criterionId: tc.id,
+          label: tsc.label,
+          value: tsc.value,
+          order: tsc.order,
+        })),
+      }));
+      setCriteria(formCriteria);
+    } else {
+      setCriteria([]);
+    }
+
+    setCurrentStep(1);
+  };
+
   const handleNextStep = () => {
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
@@ -141,13 +195,14 @@ const NewSPK = () => {
   };
 
   const handlePrevStep = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
   const resetForm = () => {
-    setCurrentStep(1);
+    setCurrentStep(0);
+    setSelectedTemplate(null);
     setCriteria([]);
     setAlternatives([]);
     setSawResults([]);
@@ -164,19 +219,89 @@ const NewSPK = () => {
       return;
     }
 
-    const apiData = transformFormToApi(title, criteria, alternatives);
+    const apiData = transformFormToApi(
+      title,
+      criteria,
+      alternatives,
+      selectedTemplate?.id
+    );
     createSPKMutation.mutate(apiData);
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
+      case 0:
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Pilih Template atau Buat Manual</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {templates.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {templates.map((template) => (
+                    <Card
+                      key={template.id}
+                      className={`cursor-pointer transition-colors ${
+                        selectedTemplate?.id === template.id
+                          ? "border-blue-500 bg-blue-50"
+                          : "hover:border-gray-300"
+                      }`}
+                      onClick={() => handleTemplateSelect(template)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold">{template.name}</h3>
+                            {template.category && (
+                              <Badge variant="secondary">
+                                {template.category}
+                              </Badge>
+                            )}
+                          </div>
+                          {template.description && (
+                            <p className="text-sm text-gray-600">
+                              {template.description}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-500">
+                            {template.templateCriteria.length} kriteria
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              <div className="border-t pt-4">
+                <Button
+                  onClick={() => handleTemplateSelect(null)}
+                  variant={selectedTemplate === null ? "default" : "outline"}
+                  className="w-full"
+                >
+                  Buat Manual (Tanpa Template)
+                </Button>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleNextStep}
+                  disabled={selectedTemplate === null && criteria.length === 0}
+                >
+                  Lanjutkan
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
       case 1:
         return (
           <CriteriaForm
             criteria={criteria}
             setCriteria={setCriteria}
             onNext={handleNextStep}
+            onPrev={handlePrevStep}
             isEditing={false}
+            isTemplateMode={!!selectedTemplate}
           />
         );
       case 2:

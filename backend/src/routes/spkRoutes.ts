@@ -25,13 +25,16 @@ router.use(authenticateToken);
  *             type: object
  *             required:
  *               - title
- *               - criteria
  *               - alternatives
  *             properties:
  *               title:
  *                 type: string
  *                 minLength: 3
  *                 maxLength: 200
+ *               templateId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: Optional template ID to use for criteria
  *               criteria:
  *                 type: array
  *                 minItems: 2

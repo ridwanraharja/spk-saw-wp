@@ -22,18 +22,25 @@ interface CriteriaFormProps {
   criteria: Criterion[];
   setCriteria: (criteria: Criterion[]) => void;
   onNext: () => void;
-  isEditing?: boolean; // New prop to determine edit vs create mode
+  onPrev?: () => void;
+  isEditing?: boolean;
+  isTemplateMode?: boolean;
 }
 
 export const CriteriaForm: React.FC<CriteriaFormProps> = ({
   criteria,
   setCriteria,
   onNext,
+  onPrev,
   isEditing = false,
+  isTemplateMode = false,
 }) => {
   const [totalWeight, setTotalWeight] = useState(0);
-  const [editingCriterionId, setEditingCriterionId] = useState<string | null>(null);
-  const { getDefaultTemplate, subCriteria: defaultSubCriteria } = useSubCriteria({ loadOnMount: true });
+  const [editingCriterionId, setEditingCriterionId] = useState<string | null>(
+    null
+  );
+  const { getDefaultTemplate, subCriteria: defaultSubCriteria } =
+    useSubCriteria({ loadOnMount: true });
 
   useEffect(() => {
     const total = criteria.reduce(
@@ -66,7 +73,10 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
     );
   };
 
-  const updateCriterionSubCriteria = (criterionId: string, subCriteria: SubCriteria[]) => {
+  const updateCriterionSubCriteria = (
+    criterionId: string,
+    subCriteria: SubCriteria[]
+  ) => {
     updateCriterion(criterionId, { subCriteria });
     setEditingCriterionId(null);
   };
@@ -115,6 +125,7 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
                     onChange={(e) =>
                       updateCriterion(criterion.id, { name: e.target.value })
                     }
+                    disabled={isTemplateMode}
                     className="mt-1"
                   />
                 </div>
@@ -139,6 +150,7 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
                         weight: parseFloat(e.target.value) || 0,
                       })
                     }
+                    disabled={isTemplateMode}
                     className="mt-1"
                   />
                 </div>
@@ -155,6 +167,7 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
                     onValueChange={(value: "benefit" | "cost") =>
                       updateCriterion(criterion.id, { type: value })
                     }
+                    disabled={isTemplateMode}
                   >
                     <SelectTrigger className="mt-1">
                       <SelectValue />
@@ -171,14 +184,16 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => removeCriterion(criterion.id)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 mt-7"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {!isTemplateMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeCriterion(criterion.id)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 mt-7"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
 
             {/* Sub-criteria section */}
@@ -192,7 +207,9 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
                 />
               ) : (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Sub-kriteria belum diatur</span>
+                  <span className="text-sm text-gray-500">
+                    Sub-kriteria belum diatur
+                  </span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -210,14 +227,21 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <Button
-          variant="outline"
-          onClick={addCriterion}
-          className="flex items-center space-x-2"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Tambah Kriteria</span>
-        </Button>
+        {!isTemplateMode && (
+          <Button
+            variant="outline"
+            onClick={addCriterion}
+            className="flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Tambah Kriteria</span>
+          </Button>
+        )}
+        {isTemplateMode && (
+          <div className="text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+            Menggunakan template - kriteria tidak dapat diubah
+          </div>
+        )}
 
         <div className="flex items-center space-x-4">
           <div
@@ -239,31 +263,42 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-end pt-6 border-t">
+      <div className="flex justify-between pt-6 border-t">
+        {onPrev && (
+          <Button variant="outline" onClick={onPrev} className="px-8 py-2">
+            Kembali
+          </Button>
+        )}
         <Button
           onClick={onNext}
           disabled={!canProceed()}
           className="px-8 py-2 bg-blue-600 hover:bg-blue-700"
         >
-          Lanjut ke Input Alternatif
+          {isTemplateMode
+            ? "Lanjut ke Input Alternatif"
+            : "Lanjut ke Input Alternatif"}
         </Button>
       </div>
 
       {/* Sub-criteria Editor Dialog */}
       {editingCriterionId && (
-        <Dialog 
-          open={!!editingCriterionId} 
+        <Dialog
+          open={!!editingCriterionId}
           onOpenChange={(open) => !open && setEditingCriterionId(null)}
         >
           <DialogContent className="max-w-2xl">
             {(() => {
-              const criterion = criteria.find(c => c.id === editingCriterionId);
+              const criterion = criteria.find(
+                (c) => c.id === editingCriterionId
+              );
               return (
                 <SubCriteriaEditor
                   criterionId={editingCriterionId}
-                  criterionName={criterion?.name || ''}
+                  criterionName={criterion?.name || ""}
                   initialSubCriteria={criterion?.subCriteria}
-                  onSave={(subCriteria) => updateCriterionSubCriteria(editingCriterionId, subCriteria)}
+                  onSave={(subCriteria) =>
+                    updateCriterionSubCriteria(editingCriterionId, subCriteria)
+                  }
                   onCancel={() => setEditingCriterionId(null)}
                   isNewCriterion={(() => {
                     // Check if it's a truly new criterion that hasn't been saved to DB yet
@@ -272,9 +307,12 @@ export const CriteriaForm: React.FC<CriteriaFormProps> = ({
                       return true;
                     } else {
                       // In edit mode, check if criterion was newly added (has temporary ID or no spkId)
-                      return !criterion?.spkId || criterion?.id.startsWith('criterion-');
+                      return (
+                        !criterion?.spkId ||
+                        criterion?.id.startsWith("criterion-")
+                      );
                     }
-                  })()} 
+                  })()}
                 />
               );
             })()}

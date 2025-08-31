@@ -10,16 +10,62 @@ export class SPKController {
   static createSPK = asyncHandler(
     async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       const userId = req.user?.userId;
-      const { title, criteria, alternatives } = req.body;
+      const { title, criteria, alternatives, templateId } = req.body;
+
+      let finalCriteria = criteria;
+
+      // If templateId is provided, get criteria from template
+      if (templateId) {
+        const template = await prisma.sPKTemplate.findFirst({
+          where: {
+            id: templateId,
+            isActive: true,
+          },
+          include: {
+            templateCriteria: {
+              include: {
+                templateSubCriteria: {
+                  orderBy: { order: "asc" },
+                },
+              },
+              orderBy: { order: "asc" },
+            },
+          },
+        });
+
+        if (!template) {
+          res.status(404).json({
+            success: false,
+            message: "Template not found or inactive",
+          });
+          return;
+        }
+
+        // Convert template criteria to SPK criteria format
+        finalCriteria = template.templateCriteria.map((tc) => ({
+          name: tc.name,
+          weight: tc.weight,
+          type: tc.type,
+          order: tc.order,
+          templateCriterionId: tc.id,
+          subCriteria: tc.templateSubCriteria.map((tsc) => ({
+            label: tsc.label,
+            value: tsc.value,
+            order: tsc.order,
+          })),
+        }));
+      }
 
       // Generate IDs for criteria first to ensure validation can work properly
-      const criteriaWithIds = criteria.map(
+      const criteriaWithIds = finalCriteria.map(
         (criterion: {
           id?: string;
           name: string;
           weight: number;
           type: "benefit" | "cost";
-          subCriteria?: Array<{label: string; value: number; order: number}>;
+          order?: number;
+          templateCriterionId?: string;
+          subCriteria?: Array<{ label: string; value: number; order: number }>;
         }) => ({
           ...criterion,
           id: criterion.id || uuidv4(),
@@ -34,7 +80,9 @@ export class SPKController {
           name: string;
           weight: number;
           type: "benefit" | "cost";
-          subCriteria?: Array<{label: string; value: number; order: number}>;
+          order?: number;
+          templateCriterionId?: string;
+          subCriteria?: Array<{ label: string; value: number; order: number }>;
         }) => {
           criterionNameToId.set(criterion.name, criterion.id);
         }
@@ -101,6 +149,7 @@ export class SPKController {
           data: {
             userId: userId!,
             title,
+            templateId: templateId || null,
           },
         });
 
@@ -112,7 +161,13 @@ export class SPKController {
               name: string;
               weight: number;
               type: "benefit" | "cost";
-              subCriteria?: Array<{label: string; value: number; order: number}>;
+              order?: number;
+              templateCriterionId?: string;
+              subCriteria?: Array<{
+                label: string;
+                value: number;
+                order: number;
+              }>;
             }) =>
               tx.criterion.create({
                 data: {
@@ -121,6 +176,8 @@ export class SPKController {
                   name: criterion.name,
                   weight: criterion.weight,
                   type: criterion.type,
+                  order: criterion.order || 1,
+                  templateCriterionId: criterion.templateCriterionId || null,
                 },
               })
           )
@@ -130,15 +187,20 @@ export class SPKController {
         for (const criterion of criteriaWithIds) {
           if (criterion.subCriteria && criterion.subCriteria.length > 0) {
             await Promise.all(
-              criterion.subCriteria.map((subCriterion: {label: string; value: number; order: number}) =>
-                tx.subCriteria.create({
-                  data: {
-                    criterionId: criterion.id,
-                    label: subCriterion.label,
-                    value: subCriterion.value,
-                    order: subCriterion.order,
-                  },
-                })
+              criterion.subCriteria.map(
+                (subCriterion: {
+                  label: string;
+                  value: number;
+                  order: number;
+                }) =>
+                  tx.subCriteria.create({
+                    data: {
+                      criterionId: criterion.id,
+                      label: subCriterion.label,
+                      value: subCriterion.value,
+                      order: subCriterion.order,
+                    },
+                  })
               )
             );
           } else {
@@ -148,11 +210,11 @@ export class SPKController {
               { label: "Rendah", value: 2, order: 2 },
               { label: "Sedang", value: 3, order: 3 },
               { label: "Tinggi", value: 4, order: 4 },
-              { label: "Sangat Tinggi", value: 5, order: 5 }
+              { label: "Sangat Tinggi", value: 5, order: 5 },
             ];
-            
+
             await Promise.all(
-              defaultSubCriteria.map(subCriterion =>
+              defaultSubCriteria.map((subCriterion) =>
                 tx.subCriteria.create({
                   data: {
                     criterionId: criterion.id,
@@ -275,9 +337,9 @@ export class SPKController {
             criteria: {
               include: {
                 subCriteria: {
-                  orderBy: { order: 'asc' }
-                }
-              }
+                  orderBy: { order: "asc" },
+                },
+              },
             },
             alternatives: {
               include: {
@@ -332,9 +394,9 @@ export class SPKController {
           criteria: {
             include: {
               subCriteria: {
-                orderBy: { order: 'asc' }
-              }
-            }
+                orderBy: { order: "asc" },
+              },
+            },
           },
           alternatives: {
             include: {
@@ -409,7 +471,11 @@ export class SPKController {
             name: string;
             weight: number;
             type: "benefit" | "cost";
-            subCriteria?: Array<{label: string; value: number; order: number}>;
+            subCriteria?: Array<{
+              label: string;
+              value: number;
+              order: number;
+            }>;
           }) => ({
             ...criterion,
             id: criterion.id || uuidv4(),
@@ -424,7 +490,11 @@ export class SPKController {
             name: string;
             weight: number;
             type: "benefit" | "cost";
-            subCriteria?: Array<{label: string; value: number; order: number}>;
+            subCriteria?: Array<{
+              label: string;
+              value: number;
+              order: number;
+            }>;
           }) => {
             criterionNameToId.set(criterion.name, criterion.id);
           }
@@ -493,8 +563,8 @@ export class SPKController {
           await tx.sAWResult.deleteMany({ where: { spkId: id } });
           await tx.wPResult.deleteMany({ where: { spkId: id } });
           await tx.alternative.deleteMany({ where: { spkId: id } });
-          await tx.subCriteria.deleteMany({ 
-            where: { criterion: { spkId: id } } 
+          await tx.subCriteria.deleteMany({
+            where: { criterion: { spkId: id } },
           });
           await tx.criterion.deleteMany({ where: { spkId: id } });
 
@@ -516,7 +586,11 @@ export class SPKController {
                 name: string;
                 weight: number;
                 type: "benefit" | "cost";
-                subCriteria?: Array<{label: string; value: number; order: number}>;
+                subCriteria?: Array<{
+                  label: string;
+                  value: number;
+                  order: number;
+                }>;
               }) =>
                 tx.criterion.create({
                   data: {
@@ -525,6 +599,8 @@ export class SPKController {
                     name: criterion.name,
                     weight: criterion.weight,
                     type: criterion.type,
+                    order: criterion.order || 1,
+                    templateCriterionId: criterion.templateCriterionId || null,
                   },
                 })
             )
@@ -534,15 +610,20 @@ export class SPKController {
           for (const criterion of criteriaWithIds) {
             if (criterion.subCriteria && criterion.subCriteria.length > 0) {
               await Promise.all(
-                criterion.subCriteria.map((subCriterion: {label: string; value: number; order: number}) =>
-                  tx.subCriteria.create({
-                    data: {
-                      criterionId: criterion.id,
-                      label: subCriterion.label,
-                      value: subCriterion.value,
-                      order: subCriterion.order,
-                    },
-                  })
+                criterion.subCriteria.map(
+                  (subCriterion: {
+                    label: string;
+                    value: number;
+                    order: number;
+                  }) =>
+                    tx.subCriteria.create({
+                      data: {
+                        criterionId: criterion.id,
+                        label: subCriterion.label,
+                        value: subCriterion.value,
+                        order: subCriterion.order,
+                      },
+                    })
                 )
               );
             } else {
@@ -552,11 +633,11 @@ export class SPKController {
                 { label: "Rendah", value: 2, order: 2 },
                 { label: "Sedang", value: 3, order: 3 },
                 { label: "Tinggi", value: 4, order: 4 },
-                { label: "Sangat Tinggi", value: 5, order: 5 }
+                { label: "Sangat Tinggi", value: 5, order: 5 },
               ];
-              
+
               await Promise.all(
-                defaultSubCriteria.map(subCriterion =>
+                defaultSubCriteria.map((subCriterion) =>
                   tx.subCriteria.create({
                     data: {
                       criterionId: criterion.id,
@@ -754,9 +835,9 @@ export class SPKController {
             criteria: {
               include: {
                 subCriteria: {
-                  orderBy: { order: 'asc' }
-                }
-              }
+                  orderBy: { order: "asc" },
+                },
+              },
             },
             alternatives: {
               include: {

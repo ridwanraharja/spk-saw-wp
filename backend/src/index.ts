@@ -14,6 +14,7 @@ import authRoutes from "./routes/authRoutes";
 import spkRoutes from "./routes/spkRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import subCriteriaRoutes from "./routes/subCriteriaRoutes";
+import templateRoutes from "./routes/templateRoutes";
 import { createFirstAdmin } from "./utils/createAdmin";
 
 dotenv.config();
@@ -94,7 +95,10 @@ app.get("/", (req: Request, res: Response) => {
       auth: `${req.protocol}://${req.get("host")}${apiPrefix}/auth`,
       spk: `${req.protocol}://${req.get("host")}${apiPrefix}/spk`,
       dashboard: `${req.protocol}://${req.get("host")}${apiPrefix}/dashboard`,
-      subCriteria: `${req.protocol}://${req.get("host")}${apiPrefix}/sub-criteria`,
+      subCriteria: `${req.protocol}://${req.get(
+        "host"
+      )}${apiPrefix}/sub-criteria`,
+      templates: `${req.protocol}://${req.get("host")}${apiPrefix}/templates`,
     },
   });
 });
@@ -103,6 +107,7 @@ app.use(`${apiPrefix}/auth`, authRoutes);
 app.use(`${apiPrefix}/spk`, spkRoutes);
 app.use(`${apiPrefix}/dashboard`, dashboardRoutes);
 app.use(`${apiPrefix}/sub-criteria`, subCriteriaRoutes);
+app.use(`${apiPrefix}/templates`, templateRoutes);
 
 setupSwagger(app);
 

@@ -13,6 +13,7 @@ import {
   Users,
   Database,
   Shield,
+  FileText,
 } from "lucide-react";
 import { User as UserType } from "@/lib/api";
 
@@ -26,7 +27,8 @@ interface AdminSidebarProps {
     | "users"
     | "create-user"
     | "edit-user"
-    | "all-spk";
+    | "all-spk"
+    | "templates";
   onViewChange: (
     view:
       | "dashboard"
@@ -38,6 +40,7 @@ interface AdminSidebarProps {
       | "create-user"
       | "edit-user"
       | "all-spk"
+      | "templates"
   ) => void;
   user: UserType | null;
   onLogout: () => void;
@@ -84,6 +87,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const adminMenuItems =
     user?.role === "admin"
       ? [
+          {
+            id: "templates" as const,
+            label: "Templates",
+            icon: FileText,
+            description: "Kelola template",
+            path: "/templates",
+          },
           {
             id: "users" as const,
             label: "Users",

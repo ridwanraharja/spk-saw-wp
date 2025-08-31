@@ -93,12 +93,48 @@ export interface WPResult {
   };
 }
 
+export interface TemplateSubCriteria {
+  id: string;
+  templateCriterionId: string;
+  label: string;
+  value: number;
+  order: number;
+}
+
+export interface TemplateCriterion {
+  id: string;
+  templateId: string;
+  name: string;
+  weight: number;
+  type: "benefit" | "cost";
+  order: number;
+  templateSubCriteria: TemplateSubCriteria[];
+}
+
+export interface SPKTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  creator: User;
+  templateCriteria: TemplateCriterion[];
+  _count?: {
+    spkRecords: number;
+  };
+}
+
 export interface SPKRecord {
   id: string;
   userId: string;
+  templateId?: string;
   title: string;
   createdAt: string;
   updatedAt: string;
+  template?: SPKTemplate;
   criteria: Criterion[];
   alternatives: Alternative[];
   sawResults: SAWResult[];
@@ -123,7 +159,8 @@ export interface AdminSPKResponse {
 
 export interface CreateSPKData {
   title: string;
-  criteria: Array<{
+  templateId?: string;
+  criteria?: Array<{
     name: string;
     weight: number;
     type: "benefit" | "cost";
@@ -136,6 +173,41 @@ export interface CreateSPKData {
   alternatives: Array<{
     name: string;
     values: { [key: string]: number };
+  }>;
+}
+
+export interface CreateTemplateData {
+  name: string;
+  description?: string;
+  category?: string;
+  criteria: Array<{
+    name: string;
+    weight: number;
+    type: "benefit" | "cost";
+    order: number;
+    subCriteria?: Array<{
+      label: string;
+      value: number;
+      order: number;
+    }>;
+  }>;
+}
+
+export interface UpdateTemplateData {
+  name?: string;
+  description?: string;
+  category?: string;
+  isActive?: boolean;
+  criteria?: Array<{
+    name: string;
+    weight: number;
+    type: "benefit" | "cost";
+    order: number;
+    subCriteria?: Array<{
+      label: string;
+      value: number;
+      order: number;
+    }>;
   }>;
 }
 
@@ -305,6 +377,13 @@ class ApiClient {
   static delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
+
+  static patch<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
 }
 
 // API Service Functions
@@ -471,13 +550,15 @@ export const userApi = {
 };
 
 export const subCriteriaApi = {
-  getDefaultTemplate: async (): Promise<ApiResponse<{
-    subCriteria: Array<{
-      label: string;
-      value: number;
-      order: number;
-    }>;
-  }>> => {
+  getDefaultTemplate: async (): Promise<
+    ApiResponse<{
+      subCriteria: Array<{
+        label: string;
+        value: number;
+        order: number;
+      }>;
+    }>
+  > => {
     return ApiClient.get<{
       subCriteria: Array<{
         label: string;
@@ -489,10 +570,12 @@ export const subCriteriaApi = {
 
   getSubCriteria: async (
     criterionId: string
-  ): Promise<ApiResponse<{
-    criterionId: string;
-    subCriteria: SubCriteria[];
-  }>> => {
+  ): Promise<
+    ApiResponse<{
+      criterionId: string;
+      subCriteria: SubCriteria[];
+    }>
+  > => {
     return ApiClient.get<{
       criterionId: string;
       subCriteria: SubCriteria[];
@@ -506,16 +589,86 @@ export const subCriteriaApi = {
       value: number;
       order: number;
     }>
-  ): Promise<ApiResponse<{
-    criterionId: string;
-    subCriteria: SubCriteria[];
-  }>> => {
+  ): Promise<
+    ApiResponse<{
+      criterionId: string;
+      subCriteria: SubCriteria[];
+    }>
+  > => {
     return ApiClient.put<{
       criterionId: string;
       subCriteria: SubCriteria[];
     }>(`/sub-criteria/${criterionId}`, {
       subCriteria,
     });
+  },
+};
+
+export const templateApi = {
+  // Get all active templates (for users)
+  getActiveTemplates: async (): Promise<
+    ApiResponse<{ templates: SPKTemplate[] }>
+  > => {
+    return ApiClient.get<{ templates: SPKTemplate[] }>("/templates/active");
+  },
+
+  // Get template by ID
+  getById: async (
+    id: string
+  ): Promise<ApiResponse<{ template: SPKTemplate }>> => {
+    return ApiClient.get<{ template: SPKTemplate }>(`/templates/${id}`);
+  },
+
+  // Admin: Get all templates
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<
+    ApiResponse<{
+      templates: SPKTemplate[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }>
+  > => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+
+    const query = queryParams.toString();
+    return ApiClient.get(`/templates${query ? `?${query}` : ""}`);
+  },
+
+  // Admin: Create template
+  create: async (
+    data: CreateTemplateData
+  ): Promise<ApiResponse<{ template: SPKTemplate }>> => {
+    return ApiClient.post<{ template: SPKTemplate }>("/templates", data);
+  },
+
+  // Admin: Update template
+  update: async (
+    id: string,
+    data: UpdateTemplateData
+  ): Promise<ApiResponse<{ template: SPKTemplate }>> => {
+    return ApiClient.put<{ template: SPKTemplate }>(`/templates/${id}`, data);
+  },
+
+  // Admin: Delete template
+  delete: async (id: string): Promise<ApiResponse> => {
+    return ApiClient.delete(`/templates/${id}`);
+  },
+
+  // Admin: Toggle template status
+  toggleStatus: async (
+    id: string
+  ): Promise<ApiResponse<{ template: SPKTemplate }>> => {
+    return ApiClient.patch<{ template: SPKTemplate }>(
+      `/templates/${id}/toggle`
+    );
   },
 };
 

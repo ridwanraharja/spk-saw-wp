@@ -35,6 +35,7 @@ const Layout = () => {
     if (pathname === "/create-user") return "create-user";
     if (pathname.startsWith("/edit-user/")) return "edit-user";
     if (pathname === "/all-spk") return "all-spk";
+    if (pathname === "/templates") return "templates";
     return "dashboard";
   };
 

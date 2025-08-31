@@ -20,6 +20,10 @@ import Users from "./pages/Users";
 import CreateUser from "./pages/CreateUser";
 import EditUser from "./pages/EditUser";
 import AllSPK from "./pages/AllSPK";
+import Templates from "./pages/Templates";
+import CreateTemplate from "./pages/CreateTemplate";
+import ViewTemplate from "./pages/ViewTemplate";
+import EditTemplate from "./pages/EditTemplate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -107,6 +111,10 @@ const AppRoutes: React.FC = () => {
         <Route path="create-user" element={<CreateUser />} />
         <Route path="edit-user/:id" element={<EditUser />} />
         <Route path="all-spk" element={<AllSPK />} />
+        <Route path="templates" element={<Templates />} />
+        <Route path="create-template" element={<CreateTemplate />} />
+        <Route path="view-template/:id" element={<ViewTemplate />} />
+        <Route path="edit-template/:id" element={<EditTemplate />} />
       </Route>
 
       {/* Catch-all 404 route */}
