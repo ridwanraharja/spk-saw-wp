@@ -77,7 +77,7 @@ const Layout = () => {
         </Sheet>
 
         {/* Main Content */}
-        <div className="flex-1 lg:ml-0">
+        <div className="flex-1 h-screen overflow-auto lg:ml-0">
           <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-6">
             <Outlet />
           </div>

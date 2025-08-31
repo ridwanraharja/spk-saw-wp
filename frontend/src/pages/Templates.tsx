@@ -99,13 +99,11 @@ const Templates = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
             Kelola Template
           </h1>
-          <p className="text-slate-600 mt-2">
-            Buat dan kelola template SPK untuk mempermudah pengguna
-          </p>
+          <p className="text-slate-600 mt-2">Buat dan kelola template SPK</p>
         </div>
-        <Button 
+        <Button
           className="flex items-center gap-2"
-          onClick={() => navigate('/create-template')}
+          onClick={() => navigate("/create-template")}
         >
           <Plus className="h-4 w-4" />
           Buat Template Baru
@@ -122,9 +120,9 @@ const Templates = () => {
             <p className="text-slate-600 mb-6">
               Mulai dengan membuat template SPK pertama Anda
             </p>
-            <Button 
+            <Button
               className="flex items-center gap-2 mx-auto"
-              onClick={() => navigate('/create-template')}
+              onClick={() => navigate("/create-template")}
             >
               <Plus className="h-4 w-4" />
               Buat Template Pertama
@@ -136,7 +134,7 @@ const Templates = () => {
           {templates.map((template) => (
             <Card
               key={template.id}
-              className="hover:shadow-md transition-shadow"
+              className="flex flex-col justify-between hover:shadow-md transition-shadow"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -196,18 +194,18 @@ const Templates = () => {
                 </div>
 
                 <div className="flex items-center gap-2 pt-4 border-t">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="flex-1"
                     onClick={() => navigate(`/view-template/${template.id}`)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     Lihat
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="flex-1"
                     onClick={() => navigate(`/edit-template/${template.id}`)}
                   >
@@ -219,7 +217,7 @@ const Templates = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={template._count?.spkRecords > 0}
+                        // disabled={template._count?.spkRecords > 0}
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />

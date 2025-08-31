@@ -131,7 +131,9 @@ const ViewTemplate = () => {
         {/* Criteria */}
         <Card>
           <CardHeader>
-            <CardTitle>Kriteria Penilaian ({template.templateCriteria.length})</CardTitle>
+            <CardTitle>
+              Kriteria Penilaian ({template.templateCriteria.length})
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -144,7 +146,13 @@ const ViewTemplate = () => {
                         <Badge variant="outline">
                           Bobot: {criterion.weight.toFixed(3)}
                         </Badge>
-                        <Badge variant={criterion.type === "benefit" ? "default" : "secondary"}>
+                        <Badge
+                          variant={
+                            criterion.type === "benefit"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
                           {criterion.type === "benefit" ? "Benefit" : "Cost"}
                         </Badge>
                       </div>
@@ -175,27 +183,6 @@ const ViewTemplate = () => {
                   </div>
                 </Card>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Usage Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Statistik Penggunaan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-sm text-slate-500">Total Penggunaan:</span>
-                <p className="text-2xl font-bold text-blue-600">
-                  {template._count?.spkRecords || 0}
-                </p>
-              </div>
-              <div>
-                <span className="text-sm text-slate-500">Pembuat:</span>
-                <p className="font-medium">{template.creator.name}</p>
-              </div>
             </div>
           </CardContent>
         </Card>

@@ -103,7 +103,7 @@ const NewSPK = () => {
     {
       number: 0,
       title: "Pilih Template",
-      description: "Pilih template atau buat manual",
+      description: "Template atau buat manual",
     },
     {
       number: 1,
@@ -234,7 +234,7 @@ const NewSPK = () => {
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Pilih Template atau Buat Manual</CardTitle>
+              <CardTitle>Pilih Template</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {templates.length > 0 && (

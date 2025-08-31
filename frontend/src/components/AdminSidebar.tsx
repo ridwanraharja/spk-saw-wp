@@ -114,7 +114,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   return (
     <div
       className={`bg-white border-r border-slate-200 flex flex-col ${
-        isMobile ? "h-full" : "h-screen w-64"
+        isMobile ? "h-full" : "h-screen w-64 overflow-auto"
       }`}
     >
       {/* Header */}
