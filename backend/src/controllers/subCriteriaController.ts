@@ -14,7 +14,7 @@ export class SubCriteriaController {
       // Check if user has access to this criterion
       const criterion = await prisma.criterion.findFirst({
         where: {
-          id: criterionId,
+          criterionId: criterionId,
           spkRecord: userRole === "admin" ? {} : { userId },
         },
         include: {
@@ -88,7 +88,7 @@ export class SubCriteriaController {
       // Check if user has access to this criterion
       const criterion = await prisma.criterion.findFirst({
         where: {
-          id: criterionId,
+          criterionId: criterionId,
           spkRecord: userRole === "admin" ? {} : { userId },
         },
       });

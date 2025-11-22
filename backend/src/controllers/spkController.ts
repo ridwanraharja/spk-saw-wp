@@ -18,7 +18,7 @@ export class SPKController {
       if (templateId) {
         const template = await prisma.sPKTemplate.findFirst({
           where: {
-            id: templateId,
+            templateId: templateId,
             isActive: true,
           },
           include: {
@@ -47,7 +47,7 @@ export class SPKController {
           weight: tc.weight,
           type: tc.type,
           order: tc.order,
-          templateCriterionId: tc.id,
+          templateCriterionId: tc.templateCriterionId,
           subCriteria: tc.templateSubCriteria.map((tsc) => ({
             label: tsc.label,
             value: tsc.value,
@@ -171,8 +171,8 @@ export class SPKController {
             }) =>
               tx.criterion.create({
                 data: {
-                  id: criterion.id,
-                  spkId: spkRecord.id,
+                  criterionId: criterion.id,
+                  spkId: spkRecord.spkId,
                   name: criterion.name,
                   weight: criterion.weight,
                   type: criterion.type,
@@ -238,8 +238,8 @@ export class SPKController {
             }) =>
               tx.alternative.create({
                 data: {
-                  id: alternative.id,
-                  spkId: spkRecord.id,
+                  alternativeId: alternative.id,
+                  spkId: spkRecord.spkId,
                   name: alternative.name,
                 },
               })
@@ -271,7 +271,7 @@ export class SPKController {
           sawResults.map((result) =>
             tx.sAWResult.create({
               data: {
-                spkId: spkRecord.id,
+                spkId: spkRecord.spkId,
                 alternativeId: result.alternativeId,
                 score: result.score,
                 rank: result.rank,
@@ -285,7 +285,7 @@ export class SPKController {
           wpResults.map((result) =>
             tx.wPResult.create({
               data: {
-                spkId: spkRecord.id,
+                spkId: spkRecord.spkId,
                 alternativeId: result.alternativeId,
                 score: result.score,
                 rank: result.rank,
@@ -301,7 +301,7 @@ export class SPKController {
         success: true,
         message: "SPK record created successfully",
         data: {
-          id: result.id,
+          spkId: result.spkId,
           title: result.title,
           createdAt: result.createdAt,
           sawResults,
@@ -329,7 +329,7 @@ export class SPKController {
           include: {
             user: {
               select: {
-                id: true,
+                userId: true,
                 name: true,
                 email: true,
               },
@@ -379,14 +379,14 @@ export class SPKController {
       const { id } = req.params;
 
       // Build where clause based on user role
-      const whereClause = userRole === "admin" ? { id } : { id, userId }; // Ensure user can only access their own records
+      const whereClause = userRole === "admin" ? { spkId: id } : { spkId: id, userId }; // Ensure user can only access their own records
 
       const spkRecord = await prisma.sPKRecord.findFirst({
         where: whereClause,
         include: {
           user: {
             select: {
-              id: true,
+              userId: true,
               name: true,
               email: true,
             },
@@ -444,7 +444,7 @@ export class SPKController {
       const { title, criteria, alternatives } = req.body;
 
       // Build where clause based on user role
-      const whereClause = userRole === "admin" ? { id } : { id, userId }; // Ensure user can only access their own records
+      const whereClause = userRole === "admin" ? { spkId: id } : { spkId: id, userId }; // Ensure user can only access their own records
 
       // Check if record exists and user has access
       const existingSPK = await prisma.sPKRecord.findFirst({
@@ -549,7 +549,7 @@ export class SPKController {
       const result = await prisma.$transaction(async (tx) => {
         // Update SPK record
         const updatedSPK = await tx.sPKRecord.update({
-          where: { id },
+          where: { spkId: id },
           data: {
             ...(title && { title }),
           },
@@ -597,7 +597,7 @@ export class SPKController {
               }) =>
                 tx.criterion.create({
                   data: {
-                    id: criterion.id,
+                    criterionId: criterion.id,
                     spkId: id,
                     name: criterion.name,
                     weight: criterion.weight,
@@ -663,7 +663,7 @@ export class SPKController {
               }) =>
                 tx.alternative.create({
                   data: {
-                    id: alternative.id,
+                    alternativeId: alternative.id,
                     spkId: id,
                     name: alternative.name,
                   },
@@ -738,7 +738,7 @@ export class SPKController {
       const { id } = req.params;
 
       // Build where clause based on user role
-      const whereClause = userRole === "admin" ? { id } : { id, userId }; // Ensure user can only access their own records
+      const whereClause = userRole === "admin" ? { spkId: id } : { spkId: id, userId }; // Ensure user can only access their own records
 
       // Check if record exists and user has access
       const existingSPK = await prisma.sPKRecord.findFirst({
@@ -755,7 +755,7 @@ export class SPKController {
 
       // Delete record (cascading delete will handle related records)
       await prisma.sPKRecord.delete({
-        where: { id },
+        where: { spkId: id },
       });
 
       res.status(200).json({
@@ -783,12 +783,12 @@ export class SPKController {
           take: 5,
           orderBy: { createdAt: "desc" },
           select: {
-            id: true,
+            spkId: true,
             title: true,
             createdAt: true,
             user: {
               select: {
-                id: true,
+                userId: true,
                 name: true,
                 email: true,
               },
@@ -829,7 +829,7 @@ export class SPKController {
           include: {
             user: {
               select: {
-                id: true,
+                userId: true,
                 name: true,
                 email: true,
                 role: true,

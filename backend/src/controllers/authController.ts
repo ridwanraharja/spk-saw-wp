@@ -57,7 +57,7 @@ export class AuthController {
           role,
         },
         select: {
-          id: true,
+          userId: true,
           email: true,
           name: true,
           role: true,
@@ -108,7 +108,7 @@ export class AuthController {
 
       // Generate tokens
       const tokens = JWTService.generateTokenPair({
-        userId: user.id,
+        userId: user.userId,
         email: user.email,
         role: user.role,
       });
@@ -117,7 +117,7 @@ export class AuthController {
       await prisma.refreshToken.create({
         data: {
           token: tokens.refreshToken,
-          userId: user.id,
+          userId: user.userId,
           expiresAt: JWTService.getRefreshTokenExpiry(),
         },
       });
@@ -127,7 +127,7 @@ export class AuthController {
         message: "Login successful",
         data: {
           user: {
-            id: user.id,
+            userId: user.userId,
             email: user.email,
             name: user.name,
             role: user.role,
@@ -172,14 +172,14 @@ export class AuthController {
 
         // Generate new tokens
         const tokens = JWTService.generateTokenPair({
-          userId: storedToken.user.id,
+          userId: storedToken.user.userId,
           email: storedToken.user.email,
           role: storedToken.user.role,
         });
 
         // Update refresh token
         await prisma.refreshToken.update({
-          where: { id: storedToken.id },
+          where: { refreshTokenId: storedToken.refreshTokenId },
           data: {
             token: tokens.refreshToken,
             expiresAt: JWTService.getRefreshTokenExpiry(),
@@ -225,9 +225,9 @@ export class AuthController {
       const userId = req.user?.userId;
 
       const user = await prisma.user.findUnique({
-        where: { id: userId },
+        where: { userId: userId },
         select: {
-          id: true,
+          userId: true,
           email: true,
           name: true,
           role: true,
@@ -262,7 +262,7 @@ export class AuthController {
         const existingUser = await prisma.user.findFirst({
           where: {
             email,
-            NOT: { id: userId },
+            NOT: { userId: userId },
           },
         });
 
@@ -277,13 +277,13 @@ export class AuthController {
 
       // Update user
       const updatedUser = await prisma.user.update({
-        where: { id: userId },
+        where: { userId: userId },
         data: {
           ...(name && { name }),
           ...(email && { email }),
         },
         select: {
-          id: true,
+          userId: true,
           email: true,
           name: true,
           role: true,
@@ -305,7 +305,7 @@ export class AuthController {
     async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       const users = await prisma.user.findMany({
         select: {
-          id: true,
+          userId: true,
           email: true,
           name: true,
           role: true,
@@ -337,7 +337,7 @@ export class AuthController {
       }
 
       const user = await prisma.user.findUnique({
-        where: { id: userId },
+        where: { userId: userId },
       });
 
       if (!user) {
@@ -349,10 +349,10 @@ export class AuthController {
       }
 
       const updatedUser = await prisma.user.update({
-        where: { id: userId },
+        where: { userId: userId },
         data: { role },
         select: {
-          id: true,
+          userId: true,
           email: true,
           name: true,
           role: true,
@@ -375,7 +375,7 @@ export class AuthController {
       const { userId } = req.params;
 
       const user = await prisma.user.findUnique({
-        where: { id: userId },
+        where: { userId: userId },
       });
 
       if (!user) {
@@ -396,7 +396,7 @@ export class AuthController {
       }
 
       await prisma.user.delete({
-        where: { id: userId },
+        where: { userId: userId },
       });
 
       res.status(200).json({
@@ -503,7 +503,7 @@ export class AuthController {
           role,
         },
         select: {
-          id: true,
+          userId: true,
           email: true,
           name: true,
           role: true,

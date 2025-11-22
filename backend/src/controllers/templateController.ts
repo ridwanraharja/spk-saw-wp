@@ -17,7 +17,7 @@ export class TemplateController {
             name,
             description,
             category,
-            createdBy: userId!,
+            userId: userId!,
           },
         });
 
@@ -37,7 +37,7 @@ export class TemplateController {
             }) =>
               tx.templateCriterion.create({
                 data: {
-                  templateId: template.id,
+                  templateId: template.templateId,
                   name: criterion.name,
                   weight: criterion.weight,
                   type: criterion.type,
@@ -62,7 +62,7 @@ export class TemplateController {
                 }) =>
                   tx.templateSubCriteria.create({
                     data: {
-                      templateCriterionId: createdCriterion.id,
+                      templateCriterionId: createdCriterion.templateCriterionId,
                       label: subCriterion.label,
                       value: subCriterion.value,
                       order: subCriterion.order,
@@ -84,7 +84,7 @@ export class TemplateController {
               defaultSubCriteria.map((subCriterion) =>
                 tx.templateSubCriteria.create({
                   data: {
-                    templateCriterionId: createdCriterion.id,
+                    templateCriterionId: createdCriterion.templateCriterionId,
                     label: subCriterion.label,
                     value: subCriterion.value,
                     order: subCriterion.order,
@@ -114,7 +114,7 @@ export class TemplateController {
         include: {
           creator: {
             select: {
-              id: true,
+              userId: true,
               name: true,
               email: true,
             },
@@ -150,7 +150,7 @@ export class TemplateController {
           include: {
             creator: {
               select: {
-                id: true,
+                userId: true,
                 name: true,
                 email: true,
               },
@@ -197,11 +197,11 @@ export class TemplateController {
       const { id } = req.params;
 
       const template = await prisma.sPKTemplate.findUnique({
-        where: { id },
+        where: { templateId: id },
         include: {
           creator: {
             select: {
-              id: true,
+              userId: true,
               name: true,
               email: true,
             },
@@ -240,7 +240,7 @@ export class TemplateController {
 
       // Check if template exists
       const existingTemplate = await prisma.sPKTemplate.findUnique({
-        where: { id },
+        where: { templateId: id },
       });
 
       if (!existingTemplate) {
@@ -254,7 +254,7 @@ export class TemplateController {
       const result = await prisma.$transaction(async (tx) => {
         // Update template
         const updatedTemplate = await tx.sPKTemplate.update({
-          where: { id },
+          where: { templateId: id },
           data: {
             ...(name && { name }),
             ...(description !== undefined && { description }),
@@ -316,7 +316,7 @@ export class TemplateController {
                   }) =>
                     tx.templateSubCriteria.create({
                       data: {
-                        templateCriterionId: createdCriterion.id,
+                        templateCriterionId: createdCriterion.templateCriterionId,
                         label: subCriterion.label,
                         value: subCriterion.value,
                         order: subCriterion.order,
@@ -343,7 +343,7 @@ export class TemplateController {
                   }) =>
                     tx.templateSubCriteria.create({
                       data: {
-                        templateCriterionId: createdCriterion.id,
+                        templateCriterionId: createdCriterion.templateCriterionId,
                         label: subCriterion.label,
                         value: subCriterion.value,
                         order: subCriterion.order,
@@ -373,7 +373,7 @@ export class TemplateController {
 
       // Check if template exists
       const existingTemplate = await prisma.sPKTemplate.findUnique({
-        where: { id },
+        where: { templateId: id },
         include: {
           _count: {
             select: {
@@ -402,7 +402,7 @@ export class TemplateController {
 
       // Delete template (cascading delete will handle related records)
       await prisma.sPKTemplate.delete({
-        where: { id },
+        where: { templateId: id },
       });
 
       res.status(200).json({
@@ -418,7 +418,7 @@ export class TemplateController {
       const { id } = req.params;
 
       const template = await prisma.sPKTemplate.findUnique({
-        where: { id },
+        where: { templateId: id },
       });
 
       if (!template) {
@@ -430,7 +430,7 @@ export class TemplateController {
       }
 
       const updatedTemplate = await prisma.sPKTemplate.update({
-        where: { id },
+        where: { templateId: id },
         data: {
           isActive: !template.isActive,
         },
