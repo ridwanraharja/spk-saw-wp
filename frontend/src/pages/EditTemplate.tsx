@@ -62,25 +62,30 @@ const EditTemplate = () => {
         category: template.category || "",
       });
 
-      const formCriteria: CriterionFormData[] = template.templateCriteria.map((tc) => ({
-        id: tc.id,
-        name: tc.name,
-        weight: tc.weight,
-        type: tc.type,
-        order: tc.order,
-        subCriteria: tc.templateSubCriteria.map((tsc) => ({
-          id: tsc.id,
-          label: tsc.label,
-          value: tsc.value,
-          order: tsc.order,
-        })),
-      }));
+      const formCriteria: CriterionFormData[] = template.templateCriteria.map(
+        (tc) => ({
+          id: tc.id,
+          name: tc.name,
+          weight: tc.weight,
+          type: tc.type,
+          order: tc.order,
+          subCriteria: tc.templateSubCriteria.map((tsc) => ({
+            id: tsc.id,
+            label: tsc.label,
+            value: tsc.value,
+            order: tsc.order,
+          })),
+        })
+      );
       setCriteria(formCriteria);
     }
   }, [template]);
 
   useEffect(() => {
-    const total = criteria.reduce((sum, criterion) => sum + criterion.weight, 0);
+    const total = criteria.reduce(
+      (sum, criterion) => sum + criterion.weight,
+      0
+    );
     setTotalWeight(total);
   }, [criteria]);
 
@@ -98,7 +103,8 @@ const EditTemplate = () => {
     onError: (error: Error) => {
       toast({
         title: "Gagal Memperbarui Template",
-        description: error.message || "Terjadi kesalahan saat memperbarui template",
+        description:
+          error.message || "Terjadi kesalahan saat memperbarui template",
         variant: "destructive",
       });
     },
@@ -106,6 +112,7 @@ const EditTemplate = () => {
 
   const addCriterion = () => {
     const newCriterion: CriterionFormData = {
+      id: `temp-${Date.now()}`,
       name: "",
       weight: 0,
       type: "benefit",
@@ -249,9 +256,7 @@ const EditTemplate = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
               Edit Template
             </h1>
-            <p className="text-slate-600 mt-2">
-              Perbarui template SPK
-            </p>
+            <p className="text-slate-600 mt-2">Perbarui template SPK</p>
           </div>
         </div>
       </div>
@@ -304,7 +309,10 @@ const EditTemplate = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Kriteria Penilaian</CardTitle>
-              <Button onClick={addCriterion} className="flex items-center gap-2">
+              <Button
+                onClick={addCriterion}
+                className="flex items-center gap-2"
+              >
                 <Plus className="h-4 w-4" />
                 Tambah Kriteria
               </Button>
@@ -408,9 +416,13 @@ const EditTemplate = () => {
                                 <Input
                                   value={sub.label}
                                   onChange={(e) =>
-                                    updateSubCriterion(criterion.id!, subIndex, {
-                                      label: e.target.value,
-                                    })
+                                    updateSubCriterion(
+                                      criterion.id!,
+                                      subIndex,
+                                      {
+                                        label: e.target.value,
+                                      }
+                                    )
                                   }
                                   placeholder="Label sub kriteria"
                                   className="flex-1"
@@ -419,9 +431,13 @@ const EditTemplate = () => {
                                   type="number"
                                   value={sub.value}
                                   onChange={(e) =>
-                                    updateSubCriterion(criterion.id!, subIndex, {
-                                      value: parseInt(e.target.value) || 0,
-                                    })
+                                    updateSubCriterion(
+                                      criterion.id!,
+                                      subIndex,
+                                      {
+                                        value: parseInt(e.target.value) || 0,
+                                      }
+                                    )
                                   }
                                   placeholder="Nilai"
                                   className="w-20"
@@ -486,7 +502,9 @@ const EditTemplate = () => {
             disabled={!canSubmit() || updateTemplateMutation.isPending}
             className="flex items-center gap-2"
           >
-            {updateTemplateMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
+            {updateTemplateMutation.isPending
+              ? "Menyimpan..."
+              : "Simpan Perubahan"}
           </Button>
         </div>
       </div>

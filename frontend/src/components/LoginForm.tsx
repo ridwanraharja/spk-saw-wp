@@ -51,9 +51,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
     if (!validateForm()) return;
 
     const success = await login(email, password);
-    if (success) {
-      // Redirect will be handled by App.tsx based on auth state
-    }
   };
 
   return (
