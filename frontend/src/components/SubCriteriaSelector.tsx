@@ -36,7 +36,7 @@ export const SubCriteriaSelector: React.FC<SubCriteriaSelectorProps> = ({
         className="grid grid-cols-1 gap-2"
       >
         {sortedSubCriteria.map((item) => (
-          <div key={item.id} className="flex items-center space-x-2">
+          <div key={item.subCriteriaId} className="flex items-center space-x-2">
             <RadioGroupItem
               value={item.value.toString()}
               id={`${criterionName}-${alternativeName}-${item.value}`}

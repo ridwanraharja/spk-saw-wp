@@ -13,13 +13,13 @@ const Users = () => {
   };
 
   const handleEditUser = (userToEdit: {
-    id: string;
+    userId: string;
     name: string;
     email: string;
     role: string;
     createdAt: string;
   }) => {
-    navigate(`/edit-user/${userToEdit.id}`, { state: { user: userToEdit } });
+    navigate(`/edit-user/${userToEdit.userId}`, { state: { user: userToEdit } });
   };
 
   if (user?.role !== "admin") {

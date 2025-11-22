@@ -39,7 +39,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userApi } from "@/lib/api";
 
 interface User {
-  id: string;
+  userId: string;
   name: string;
   email: string;
   role: string;
@@ -104,7 +104,7 @@ export const UserList: React.FC<UserListProps> = ({
 
   const handleDeleteConfirm = () => {
     if (userToDelete) {
-      deleteUserMutation.mutate(userToDelete.id);
+      deleteUserMutation.mutate(userToDelete.userId);
     }
   };
 
@@ -169,7 +169,7 @@ export const UserList: React.FC<UserListProps> = ({
           </TableHeader>
           <TableBody>
             {users.map((user) => (
-              <TableRow key={user.id}>
+              <TableRow key={user.userId}>
                 <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>

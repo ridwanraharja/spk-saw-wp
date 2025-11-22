@@ -1,12 +1,26 @@
-import { Criterion, Alternative, SAWResult, WPResult } from "@/lib/api";
+import { SAWResult, WPResult } from "@/lib/api";
+
+// Local form types (used in NewSPK, EditSPK, Index)
+interface LocalCriterion {
+  id: string;
+  name: string;
+  weight: number;
+  type: "benefit" | "cost";
+}
+
+interface LocalAlternative {
+  id: string;
+  name: string;
+  values: { [criterionId: string]: number };
+}
 
 // Validate sub-criteria values (1-5 range)
 export const validateSubCriteriaValues = (
-  criteria: Criterion[],
-  alternatives: Alternative[]
+  criteria: LocalCriterion[],
+  alternatives: LocalAlternative[]
 ): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
-  
+
   alternatives.forEach((alternative) => {
     criteria.forEach((criterion) => {
       const value = alternative.values?.[criterion.id];
@@ -30,8 +44,8 @@ export const validateSubCriteriaValues = (
 };
 
 export const calculateSAW = (
-  criteria: Criterion[],
-  alternatives: Alternative[]
+  criteria: LocalCriterion[],
+  alternatives: LocalAlternative[]
 ): SAWResult[] => {
   // Step 1: Validate sub-criteria values
   const validation = validateSubCriteriaValues(criteria, alternatives);
@@ -70,7 +84,7 @@ export const calculateSAW = (
 
   // Step 5: Create results with ranking
   const results: SAWResult[] = alternatives.map((alt, i) => ({
-    id: `saw-${alt.id}-${Date.now()}`,
+    sawResultId: `saw-${alt.id}-${Date.now()}`,
     spkId: `spk-${Date.now()}`,
     alternativeId: alt.id,
     score: preferenceValues[i],
@@ -87,8 +101,8 @@ export const calculateSAW = (
 };
 
 export const calculateWP = (
-  criteria: Criterion[],
-  alternatives: Alternative[]
+  criteria: LocalCriterion[],
+  alternatives: LocalAlternative[]
 ): WPResult[] => {
   // Step 1: Validate sub-criteria values
   const validation = validateSubCriteriaValues(criteria, alternatives);
@@ -138,7 +152,7 @@ export const calculateWP = (
 
   // Step 6: Create results with proper types
   const results: WPResult[] = scores.map((score) => ({
-    id: `wp-${score.alternativeId}-${Date.now()}`,
+    wpResultId: `wp-${score.alternativeId}-${Date.now()}`,
     spkId: `spk-${Date.now()}`,
     alternativeId: score.alternativeId,
     score: score.score,

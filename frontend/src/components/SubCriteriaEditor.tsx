@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Save, RotateCcw } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { SubCriteria, subCriteriaApi } from '@/lib/api';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle, Save, RotateCcw } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SubCriteria, subCriteriaApi } from "@/lib/api";
 
 interface SubCriteriaEditorProps {
   criterionId: string;
@@ -31,11 +37,11 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
   isNewCriterion = false,
 }) => {
   const [subCriteria, setSubCriteria] = useState<SubCriteriaForm[]>([
-    { label: 'Sangat Rendah', value: 1, order: 1 },
-    { label: 'Rendah', value: 2, order: 2 },
-    { label: 'Sedang', value: 3, order: 3 },
-    { label: 'Tinggi', value: 4, order: 4 },
-    { label: 'Sangat Tinggi', value: 5, order: 5 },
+    { label: "Sangat Rendah", value: 1, order: 1 },
+    { label: "Rendah", value: 2, order: 2 },
+    { label: "Sedang", value: 3, order: 3 },
+    { label: "Tinggi", value: 4, order: 4 },
+    { label: "Sangat Tinggi", value: 5, order: 5 },
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +51,7 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
   useEffect(() => {
     if (initialSubCriteria && initialSubCriteria.length > 0) {
       // Use provided initial sub-criteria
-      const formattedSubCriteria = initialSubCriteria.map(sc => ({
+      const formattedSubCriteria = initialSubCriteria.map((sc) => ({
         label: sc.label,
         value: sc.value,
         order: sc.order,
@@ -64,7 +70,7 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
       setLoading(true);
       const response = await subCriteriaApi.getSubCriteria(criterionId);
       if (response.success && response.data) {
-        const loadedSubCriteria = response.data.subCriteria.map(sc => ({
+        const loadedSubCriteria = response.data.subCriteria.map((sc) => ({
           label: sc.label,
           value: sc.value,
           order: sc.order,
@@ -74,7 +80,7 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
       }
     } catch (err) {
       // If criterion not found or no sub-criteria, use defaults
-      console.warn('Could not load sub-criteria, using defaults');
+      console.warn("Could not load sub-criteria, using defaults");
       setHasChanges(false);
     } finally {
       setLoading(false);
@@ -82,10 +88,8 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
   };
 
   const handleLabelChange = (index: number, value: string) => {
-    setSubCriteria(prev => 
-      prev.map((item, i) => 
-        i === index ? { ...item, label: value } : item
-      )
+    setSubCriteria((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, label: value } : item))
     );
     setHasChanges(true);
   };
@@ -96,30 +100,33 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
       setError(null);
 
       // Validate labels
-      const emptyLabels = subCriteria.filter(sc => !sc.label.trim());
+      const emptyLabels = subCriteria.filter((sc) => !sc.label.trim());
       if (emptyLabels.length > 0) {
-        setError('Semua label harus diisi');
+        setError("Semua label harus diisi");
         return;
       }
 
       if (isNewCriterion) {
         // For new criteria, just save to state without API call
-        const formattedSubCriteria: SubCriteria[] = subCriteria.map(sc => ({
-          id: `temp-${sc.value}`,
+        const formattedSubCriteria: SubCriteria[] = subCriteria.map((sc) => ({
+          subCriteriaId: `temp-${sc.value}`,
           criterionId: criterionId,
           label: sc.label,
           value: sc.value,
           order: sc.order,
         }));
-        
+
         setHasChanges(false);
         if (onSave) {
           onSave(formattedSubCriteria);
         }
       } else {
         // For existing criteria, save to API
-        const response = await subCriteriaApi.updateSubCriteria(criterionId, subCriteria);
-        
+        const response = await subCriteriaApi.updateSubCriteria(
+          criterionId,
+          subCriteria
+        );
+
         if (response.success && response.data) {
           setHasChanges(false);
           if (onSave) {
@@ -128,7 +135,7 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan sub-kriteria');
+      setError(err.message || "Gagal menyimpan sub-kriteria");
     } finally {
       setLoading(false);
     }
@@ -143,14 +150,14 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
         setHasChanges(true);
       }
     } catch (err) {
-      console.warn('Could not load default template');
+      console.warn("Could not load default template");
       // Reset to hardcoded defaults
       setSubCriteria([
-        { label: 'Sangat Rendah', value: 1, order: 1 },
-        { label: 'Rendah', value: 2, order: 2 },
-        { label: 'Sedang', value: 3, order: 3 },
-        { label: 'Tinggi', value: 4, order: 4 },
-        { label: 'Sangat Tinggi', value: 5, order: 5 },
+        { label: "Sangat Rendah", value: 1, order: 1 },
+        { label: "Rendah", value: 2, order: 2 },
+        { label: "Sedang", value: 3, order: 3 },
+        { label: "Tinggi", value: 4, order: 4 },
+        { label: "Sangat Tinggi", value: 5, order: 5 },
       ]);
       setHasChanges(true);
     } finally {
@@ -163,7 +170,8 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
       <CardHeader>
         <CardTitle>Edit Sub-Kriteria</CardTitle>
         <CardDescription>
-          Atur label untuk skala penilaian 1-5 pada kriteria: <strong>{criterionName}</strong>
+          Atur label untuk skala penilaian 1-5 pada kriteria:{" "}
+          <strong>{criterionName}</strong>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -206,23 +214,16 @@ export const SubCriteriaEditor: React.FC<SubCriteriaEditorProps> = ({
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset Default
           </Button>
-          
+
           {onCancel && (
-            <Button
-              variant="outline"
-              onClick={onCancel}
-              disabled={loading}
-            >
+            <Button variant="outline" onClick={onCancel} disabled={loading}>
               Batal
             </Button>
           )}
-          
-          <Button
-            onClick={handleSave}
-            disabled={loading || !hasChanges}
-          >
+
+          <Button onClick={handleSave} disabled={loading || !hasChanges}>
             <Save className="h-4 w-4 mr-2" />
-            {loading ? 'Menyimpan...' : 'Simpan'}
+            {loading ? "Menyimpan..." : "Simpan"}
           </Button>
         </div>
       </CardContent>

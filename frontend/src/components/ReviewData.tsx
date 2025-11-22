@@ -2,12 +2,26 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Calculator } from "lucide-react";
-import { Criterion, Alternative, SAWResult, WPResult } from "@/lib/api";
+import { SAWResult, WPResult } from "@/lib/api";
 import { calculateSAW, calculateWP } from "@/utils/calculations";
 
+// Local form types (used in NewSPK, EditSPK, Index)
+interface LocalCriterion {
+  id: string;
+  name: string;
+  weight: number;
+  type: "benefit" | "cost";
+}
+
+interface LocalAlternative {
+  id: string;
+  name: string;
+  values: { [criterionId: string]: number };
+}
+
 interface ReviewDataProps {
-  criteria: Criterion[];
-  alternatives: Alternative[];
+  criteria: LocalCriterion[];
+  alternatives: LocalAlternative[];
   onNext: () => void;
   onPrev: () => void;
   setSawResults: (results: SAWResult[]) => void;

@@ -65,7 +65,7 @@ export interface Alternative {
 // Helper functions to transform data between API and form formats
 const transformApiToForm = (record: SPKRecord) => {
   const criteria: Criterion[] = record.criteria.map((c) => ({
-    id: c.id,
+    id: c.criterionId,
     spkId: c.spkId,
     name: c.name,
     weight: c.weight,
@@ -90,7 +90,7 @@ const transformApiToForm = (record: SPKRecord) => {
     }
 
     const transformedAlt: Alternative = {
-      id: alt.id,
+      id: alt.alternativeId,
       name: alt.name,
       values,
     };
@@ -166,7 +166,7 @@ const Index = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SPKRecord | null>(null);
   const [editingUser, setEditingUser] = useState<{
-    id: string;
+    userId: string;
     name: string;
     email: string;
     role: string;
@@ -237,9 +237,9 @@ const Index = () => {
       });
 
       // Fetch complete data using getById to populate results
-      if (response.data?.id) {
+      if (response.data?.spkId) {
         try {
-          const detailResponse = await spkApi.getById(response.data.id);
+          const detailResponse = await spkApi.getById(response.data.spkId);
           if (detailResponse.success && detailResponse.data) {
             const record = detailResponse.data.spkRecord;
             setSawResults(record.sawResults || []);
@@ -275,10 +275,10 @@ const Index = () => {
       });
 
       // Fetch complete updated data
-      if (response.data?.spkRecord?.id) {
+      if (response.data?.spkRecord?.spkId) {
         try {
           const detailResponse = await spkApi.getById(
-            response.data.spkRecord.id
+            response.data.spkRecord.spkId
           );
           if (detailResponse.success && detailResponse.data) {
             const record = detailResponse.data.spkRecord;
@@ -392,7 +392,7 @@ const Index = () => {
       alternatives
     ) as UpdateSPKData;
     updateSPKMutation.mutate({
-      id: editingRecord.id,
+      id: editingRecord.spkId,
       updateData: apiData,
     });
   };
@@ -400,7 +400,7 @@ const Index = () => {
   const viewResult = async (record: SPKRecord) => {
     try {
       // Fetch complete data including results
-      const response = await spkApi.getById(record.id);
+      const response = await spkApi.getById(record.spkId);
       if (response.success && response.data) {
         setSelectedRecord(response.data.spkRecord);
         handleViewChange("view-result");
@@ -455,7 +455,7 @@ const Index = () => {
   const editSPK = async (record: SPKRecord) => {
     try {
       // Fetch complete data for editing
-      const response = await spkApi.getById(record.id);
+      const response = await spkApi.getById(record.spkId);
       if (response.success && response.data) {
         const fullRecord = response.data.spkRecord;
         const { criteria: formCriteria, alternatives: formAlternatives } =
@@ -485,7 +485,7 @@ const Index = () => {
   };
 
   const handleEditUser = (user: {
-    id: string;
+    userId: string;
     name: string;
     email: string;
     role: string;
@@ -649,7 +649,7 @@ const Index = () => {
                   <div className="space-y-3">
                     {dashboardStats.recentSPK.map((spk) => (
                       <div
-                        key={spk.id}
+                        key={spk.spkId}
                         className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
                       >
                         <div>

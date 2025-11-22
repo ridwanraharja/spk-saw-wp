@@ -46,9 +46,9 @@ const History = () => {
 
   const viewResult = async (record: SPKRecord) => {
     try {
-      const response = await spkApi.getById(record.id);
+      const response = await spkApi.getById(record.spkId);
       if (response.success && response.data) {
-        navigate(`/result/${record.id}`);
+        navigate(`/result/${record.spkId}`);
       } else {
         throw new Error("Failed to fetch complete data");
       }
@@ -66,7 +66,7 @@ const History = () => {
   };
 
   const editSPK = async (record: SPKRecord) => {
-    navigate(`/edit-spk/${record.id}`);
+    navigate(`/edit-spk/${record.spkId}`);
   };
 
   return (

@@ -10,11 +10,11 @@ const AllSPK = () => {
   const { user } = useAuth();
 
   const handleViewSPK = (spk: SPKRecord) => {
-    navigate(`/result/${spk.id}`);
+    navigate(`/result/${spk.spkId}`);
   };
 
   const handleEditSPK = (spk: SPKRecord) => {
-    navigate(`/edit-spk/${spk.id}`);
+    navigate(`/edit-spk/${spk.spkId}`);
   };
 
   const handleDeleteSPK = (id: string) => {

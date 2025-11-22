@@ -16,7 +16,7 @@ interface RankingAnalysisProps {
 // Extended type to handle both form and API formats
 interface ExtendedAlternative extends Alternative {
   alternativeValues?: Array<{
-    id: string;
+    alternativeValueId: string;
     alternativeId: string;
     criterionId: string;
     value: number;

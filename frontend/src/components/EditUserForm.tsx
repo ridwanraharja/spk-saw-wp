@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface User {
-  id: string;
+  userId: string;
   name: string;
   email: string;
   role: string;
@@ -96,7 +96,7 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onBack }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateUserMutation.mutate({
-      userId: user.id,
+      userId: user.userId,
       role: formData.role,
     });
   };

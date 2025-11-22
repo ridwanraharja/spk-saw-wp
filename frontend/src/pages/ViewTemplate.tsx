@@ -78,7 +78,7 @@ const ViewTemplate = () => {
           </div>
         </div>
         <Button
-          onClick={() => navigate(`/edit-template/${template.id}`)}
+          onClick={() => navigate(`/edit-template/${template.templateId}`)}
           className="flex items-center gap-2"
         >
           <Edit className="h-4 w-4" />
@@ -138,7 +138,7 @@ const ViewTemplate = () => {
           <CardContent>
             <div className="space-y-4">
               {template.templateCriteria.map((criterion) => (
-                <Card key={criterion.id} className="p-4">
+                <Card key={criterion.templateCriterionId} className="p-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="font-semibold">{criterion.name}</h4>
@@ -168,7 +168,7 @@ const ViewTemplate = () => {
                             .sort((a, b) => a.order - b.order)
                             .map((sub) => (
                               <div
-                                key={sub.id}
+                                key={sub.templateSubCriteriaId}
                                 className="flex items-center justify-between p-2 bg-slate-50 rounded text-sm"
                               >
                                 <span>{sub.label}</span>

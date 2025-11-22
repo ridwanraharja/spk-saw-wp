@@ -22,7 +22,7 @@ export interface Alternative {
 
 const transformApiToForm = (record: SPKRecord) => {
   const criteria: Criterion[] = record.criteria.map((c) => ({
-    id: c.id,
+    id: c.criterionId,
     spkId: c.spkId,
     name: c.name,
     weight: c.weight,
@@ -46,7 +46,7 @@ const transformApiToForm = (record: SPKRecord) => {
     }
 
     return {
-      id: alt.id,
+      id: alt.alternativeId,
       name: alt.name,
       values,
     };

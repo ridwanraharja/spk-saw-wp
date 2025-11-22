@@ -5,7 +5,7 @@ const API_BASE_URL =
 
 // Types from backend
 export interface User {
-  id: string;
+  userId: string;
   email: string;
   name: string;
   role: string;
@@ -35,7 +35,7 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface SubCriteria {
-  id: string;
+  subCriteriaId: string;
   criterionId: string;
   label: string;
   value: number;
@@ -43,7 +43,7 @@ export interface SubCriteria {
 }
 
 export interface Criterion {
-  id: string;
+  criterionId: string;
   spkId?: string;
   name: string;
   weight: number;
@@ -52,7 +52,7 @@ export interface Criterion {
 }
 
 export interface AlternativeValue {
-  id: string;
+  alternativeValueId: string;
   alternativeId: string;
   criterionId: string;
   value: number;
@@ -60,7 +60,7 @@ export interface AlternativeValue {
 }
 
 export interface Alternative {
-  id: string;
+  alternativeId: string;
   spkId?: string;
   name: string;
   values?: { [criterionId: string]: number };
@@ -68,33 +68,33 @@ export interface Alternative {
 }
 
 export interface SAWResult {
-  id: string;
+  sawResultId: string;
   spkId: string;
   alternativeId: string;
   score: number;
   rank: number;
   alternative?: {
-    id: string;
+    alternativeId: string;
     spkId: string;
     name: string;
   };
 }
 
 export interface WPResult {
-  id: string;
+  wpResultId: string;
   spkId: string;
   alternativeId: string;
   score: number;
   rank: number;
   alternative?: {
-    id: string;
+    alternativeId: string;
     spkId: string;
     name: string;
   };
 }
 
 export interface TemplateSubCriteria {
-  id: string;
+  templateSubCriteriaId: string;
   templateCriterionId: string;
   label: string;
   value: number;
@@ -102,7 +102,7 @@ export interface TemplateSubCriteria {
 }
 
 export interface TemplateCriterion {
-  id: string;
+  templateCriterionId: string;
   templateId: string;
   name: string;
   weight: number;
@@ -112,7 +112,7 @@ export interface TemplateCriterion {
 }
 
 export interface SPKTemplate {
-  id: string;
+  templateId: string;
   name: string;
   description?: string;
   category?: string;
@@ -128,7 +128,7 @@ export interface SPKTemplate {
 }
 
 export interface SPKRecord {
-  id: string;
+  spkId: string;
   userId: string;
   templateId?: string;
   title: string;
@@ -232,7 +232,7 @@ export interface UpdateSPKData {
 export interface DashboardStats {
   totalSPK: number;
   recentSPK: {
-    id: string;
+    spkId: string;
     title: string;
     createdAt: string;
   }[];

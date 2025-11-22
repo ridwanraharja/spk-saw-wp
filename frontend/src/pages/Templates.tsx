@@ -133,7 +133,7 @@ const Templates = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (
             <Card
-              key={template.id}
+              key={template.templateId}
               className="flex flex-col justify-between hover:shadow-md transition-shadow"
             >
               <CardHeader className="pb-3">
@@ -153,7 +153,7 @@ const Templates = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => toggleStatusMutation.mutate(template.id)}
+                      onClick={() => toggleStatusMutation.mutate(template.templateId)}
                       disabled={toggleStatusMutation.isPending}
                     >
                       {template.isActive ? (
@@ -198,7 +198,7 @@ const Templates = () => {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => navigate(`/view-template/${template.id}`)}
+                    onClick={() => navigate(`/view-template/${template.templateId}`)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     Lihat
@@ -207,7 +207,7 @@ const Templates = () => {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => navigate(`/edit-template/${template.id}`)}
+                    onClick={() => navigate(`/edit-template/${template.templateId}`)}
                   >
                     <Edit className="h-4 w-4 mr-1" />
                     Edit
@@ -235,7 +235,7 @@ const Templates = () => {
                         <AlertDialogCancel>Batal</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() =>
-                            deleteTemplateMutation.mutate(template.id)
+                            deleteTemplateMutation.mutate(template.templateId)
                           }
                           className="bg-red-600 hover:bg-red-700"
                         >

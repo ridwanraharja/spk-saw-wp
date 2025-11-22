@@ -105,7 +105,7 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
 
   const handleConfirmDelete = () => {
     if (spkToDelete) {
-      deleteSPKMutation.mutate(spkToDelete.id);
+      deleteSPKMutation.mutate(spkToDelete.spkId);
     }
   };
 
@@ -229,7 +229,7 @@ export const AllSPKList: React.FC<AllSPKListProps> = ({
             {spkRecords.map((spk: SPKRecordWithUser) => (
               <TableRow
                 className="cursor-pointer"
-                key={spk.id}
+                key={spk.spkId}
                 onClick={(e) => {
                   e.stopPropagation();
                   onViewSPK(spk);

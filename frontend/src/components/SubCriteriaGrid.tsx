@@ -42,7 +42,7 @@ export const SubCriteriaGrid: React.FC<SubCriteriaGridProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
         {sortedSubCriteria.map((item) => (
-          <div key={item.id} className="text-center">
+          <div key={item.subCriteriaId} className="text-center">
             <Button
               variant={value === item.value ? "default" : "outline"}
               size="sm"

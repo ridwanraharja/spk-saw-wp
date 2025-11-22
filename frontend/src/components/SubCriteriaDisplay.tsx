@@ -42,7 +42,7 @@ export const SubCriteriaDisplay: React.FC<SubCriteriaDisplayProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
         {sortedSubCriteria.map((item) => (
           <div
-            key={item.id}
+            key={item.subCriteriaId}
             className="flex items-center gap-2 p-2 bg-gray-50 rounded-md"
           >
             <Badge variant="secondary" className="w-6 h-6 p-0 flex items-center justify-center text-xs">

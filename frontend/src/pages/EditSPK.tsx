@@ -29,7 +29,7 @@ export interface Alternative {
 
 const transformApiToForm = (record: SPKRecord) => {
   const criteria: Criterion[] = record.criteria.map((c) => ({
-    id: c.id,
+    id: c.criterionId,
     spkId: c.spkId,
     name: c.name,
     weight: c.weight,
@@ -53,7 +53,7 @@ const transformApiToForm = (record: SPKRecord) => {
     }
 
     return {
-      id: alt.id,
+      id: alt.alternativeId,
       name: alt.name,
       values,
     };
@@ -149,9 +149,9 @@ const EditSPK = () => {
         description: "Data SPK telah diperbarui di database",
       });
 
-      if (response.data?.spkRecord?.id) {
+      if (response.data?.spkRecord?.spkId) {
         try {
-          const detailResponse = await spkApi.getById(response.data.spkRecord.id);
+          const detailResponse = await spkApi.getById(response.data.spkRecord.spkId);
           if (detailResponse.success && detailResponse.data) {
             const record = detailResponse.data.spkRecord;
             setSawResults(record.sawResults || []);
@@ -246,7 +246,7 @@ const EditSPK = () => {
 
     const apiData = transformFormToApi(title, criteria, alternatives);
     updateSPKMutation.mutate({
-      id: editingRecord.id,
+      id: editingRecord.spkId,
       updateData: apiData,
     });
   };

@@ -137,9 +137,9 @@ const NewSPK = () => {
         description: "Data SPK telah disimpan ke database",
       });
 
-      if (response.data?.id) {
+      if (response.data?.spkId) {
         try {
-          const detailResponse = await spkApi.getById(response.data.id);
+          const detailResponse = await spkApi.getById(response.data.spkId);
           if (detailResponse.success && detailResponse.data) {
             const record = detailResponse.data.spkRecord;
             setSawResults(record.sawResults || []);
@@ -168,13 +168,13 @@ const NewSPK = () => {
     if (template) {
       // Convert template criteria to form criteria
       const formCriteria: Criterion[] = template.templateCriteria.map((tc) => ({
-        id: tc.id,
+        id: tc.templateCriterionId,
         name: tc.name,
         weight: tc.weight,
         type: tc.type,
         subCriteria: tc.templateSubCriteria.map((tsc) => ({
-          id: tsc.id,
-          criterionId: tc.id,
+          subCriteriaId: tsc.templateSubCriteriaId,
+          criterionId: tc.templateCriterionId,
           label: tsc.label,
           value: tsc.value,
           order: tsc.order,
@@ -223,7 +223,7 @@ const NewSPK = () => {
       title,
       criteria,
       alternatives,
-      selectedTemplate?.id
+      selectedTemplate?.templateId
     );
     createSPKMutation.mutate(apiData);
   };
@@ -241,9 +241,9 @@ const NewSPK = () => {
                 <div className="grid gap-4 md:grid-cols-2">
                   {templates.map((template) => (
                     <Card
-                      key={template.id}
+                      key={template.templateId}
                       className={`cursor-pointer transition-colors ${
-                        selectedTemplate?.id === template.id
+                        selectedTemplate?.templateId === template.templateId
                           ? "border-blue-500 bg-blue-50"
                           : "hover:border-gray-300"
                       }`}
@@ -286,6 +286,7 @@ const NewSPK = () => {
                 <Button
                   onClick={handleNextStep}
                   disabled={selectedTemplate === null && criteria.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   Lanjutkan
                 </Button>

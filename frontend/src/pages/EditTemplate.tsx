@@ -64,13 +64,13 @@ const EditTemplate = () => {
 
       const formCriteria: CriterionFormData[] = template.templateCriteria.map(
         (tc) => ({
-          id: tc.id,
+          id: tc.templateCriterionId,
           name: tc.name,
           weight: tc.weight,
           type: tc.type,
           order: tc.order,
           subCriteria: tc.templateSubCriteria.map((tsc) => ({
-            id: tsc.id,
+            id: tsc.templateSubCriteriaId,
             label: tsc.label,
             value: tsc.value,
             order: tsc.order,

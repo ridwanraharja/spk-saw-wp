@@ -89,7 +89,7 @@ const Dashboard = () => {
           <div className="space-y-3">
             {dashboardStats.recentSPK.map((spk) => (
               <div
-                key={spk.id}
+                key={spk.spkId}
                 className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
               >
                 <div>

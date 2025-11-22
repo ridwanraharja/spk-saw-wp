@@ -58,7 +58,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
 
   const handleConfirmDelete = () => {
     if (recordToDelete && onDeleteRecord) {
-      onDeleteRecord(recordToDelete.id);
+      onDeleteRecord(recordToDelete.spkId);
       setDeleteDialogOpen(false);
       setRecordToDelete(null);
     }
@@ -101,7 +101,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             e.stopPropagation();
             onViewResult(record);
           }}
-          key={record.id}
+          key={record.spkId}
           className="p-4 sm:p-6 hover:shadow-md transition-shadow cursor-pointer"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
