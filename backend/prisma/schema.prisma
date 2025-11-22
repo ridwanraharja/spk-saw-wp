@@ -15,13 +15,13 @@ datasource db {
 
 // User model for authentication
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  password  String   // hashed password
-  role      String   @default("user") // "admin" or "user"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  userId    String   @id @default(uuid()) @map("user_id")
+  email     String   @unique @map("email")
+  name      String   @map("name")
+  password  String   @map("password") // hashed password
+  role      String   @default("user") @map("role") // "admin" or "user"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   spkRecords       SPKRecord[]
@@ -33,48 +33,48 @@ model User {
 
 // Refresh tokens for JWT authentication
 model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  refreshTokenId String   @id @default(uuid()) @map("refresh_token_id")
+  token          String   @unique @map("token")
+  userId         String   @map("user_id")
+  expiresAt      DateTime @map("expires_at")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@map("refresh_tokens")
 }
 
 // SPK Template model - templates created by admin
 model SPKTemplate {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  category    String?  // e.g., "Employee Selection", "Vendor Selection", etc.
-  isActive    Boolean  @default(true)
-  createdBy   String   // Admin who created this template
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  templateId  String   @id @default(uuid()) @map("template_id")
+  name        String   @map("name")
+  description String?  @map("description")
+  category    String?  @map("category") // e.g., "Employee Selection", "Vendor Selection", etc.
+  isActive    Boolean  @default(true) @map("is_active")
+  userId      String   @map("user_id") // Admin who created this template
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  creator         User                    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  creator          User                  @relation(fields: [userId], references: [userId], onDelete: Cascade)
   templateCriteria TemplateCriterion[]
-  spkRecords      SPKRecord[]             // Records using this template
+  spkRecords       SPKRecord[]           // Records using this template
 
   @@map("spk_templates")
 }
 
 // Template Criterion - criteria defined in templates
 model TemplateCriterion {
-  id          String @id @default(uuid())
-  templateId  String
-  name        String
-  weight      Float
-  type        String // 'benefit' or 'cost'
-  order       Int    // for ordering display
+  templateCriterionId String @id @default(uuid()) @map("template_criterion_id")
+  templateId          String @map("template_id")
+  name                String @map("name")
+  weight              Float  @map("weight")
+  type                String @map("type") // 'benefit' or 'cost'
+  order               Int    @map("order") // for ordering display
 
   // Relations
-  template           SPKTemplate           @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  template            SPKTemplate           @relation(fields: [templateId], references: [templateId], onDelete: Cascade)
   templateSubCriteria TemplateSubCriteria[]
 
   @@map("template_criteria")
@@ -82,14 +82,14 @@ model TemplateCriterion {
 
 // Template Sub-criteria - sub-criteria defined in templates
 model TemplateSubCriteria {
-  id                   String @id @default(uuid())
-  templateCriterionId  String
-  label                String
-  value                Int    // 1-5 scale
-  order                Int    // for ordering display
+  templateSubCriteriaId String @id @default(uuid()) @map("template_sub_criteria_id")
+  templateCriterionId   String @map("template_criterion_id")
+  label                 String @map("label")
+  value                 Int    @map("value") // 1-5 scale
+  order                 Int    @map("order") // for ordering display
 
   // Relations
-  templateCriterion TemplateCriterion @relation(fields: [templateCriterionId], references: [id], onDelete: Cascade)
+  templateCriterion TemplateCriterion @relation(fields: [templateCriterionId], references: [templateCriterionId], onDelete: Cascade)
 
   @@unique([templateCriterionId, value])
   @@map("template_sub_criteria")
@@ -97,16 +97,16 @@ model TemplateSubCriteria {
 
 // SPK Record model - main record for each SPK analysis (now uses templates)
 model SPKRecord {
-  id         String  @id @default(uuid())
-  userId     String
-  templateId String? // Reference to template used (optional for backward compatibility)
-  title      String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  spkId      String   @id @default(uuid()) @map("spk_id")
+  userId     String   @map("user_id")
+  templateId String?  @map("template_id") // Reference to template used (optional for backward compatibility)
+  title      String   @map("title")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   // Relations
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  template     SPKTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  user         User          @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  template     SPKTemplate?  @relation(fields: [templateId], references: [templateId], onDelete: SetNull)
   criteria     Criterion[]   // Actual criteria used (copied from template or custom)
   alternatives Alternative[]
   sawResults   SAWResult[]
@@ -117,16 +117,16 @@ model SPKRecord {
 
 // Criterion model - criteria for evaluation (now can be copied from template)
 model Criterion {
-  id                   String  @id @default(uuid())
-  spkId                String
-  templateCriterionId  String? // Reference to original template criterion
-  name                 String
-  weight               Float
-  type                 String  // 'benefit' or 'cost'
-  order                Int     // for ordering display
+  criterionId          String  @id @default(uuid()) @map("criterion_id")
+  spkId                String  @map("spk_id")
+  templateCriterionId  String? @map("template_criterion_id") // Reference to original template criterion
+  name                 String  @map("name")
+  weight               Float   @map("weight")
+  type                 String  @map("type") // 'benefit' or 'cost'
+  order                Int     @map("order") // for ordering display
 
   // Relations
-  spkRecord         SPKRecord          @relation(fields: [spkId], references: [id], onDelete: Cascade)
+  spkRecord         SPKRecord          @relation(fields: [spkId], references: [spkId], onDelete: Cascade)
   alternativeValues AlternativeValue[]
   subCriteria       SubCriteria[]
 
@@ -135,14 +135,14 @@ model Criterion {
 
 // Sub-criteria for each criterion (copied from template or custom)
 model SubCriteria {
-  id          String @id @default(uuid())
-  criterionId String
-  label       String
-  value       Int    // 1-5 scale
-  order       Int    // for ordering display
+  subCriteriaId String @id @default(uuid()) @map("sub_criteria_id")
+  criterionId   String @map("criterion_id")
+  label         String @map("label")
+  value         Int    @map("value") // 1-5 scale
+  order         Int    @map("order") // for ordering display
 
   // Relations
-  criterion Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  criterion Criterion @relation(fields: [criterionId], references: [criterionId], onDelete: Cascade)
 
   @@unique([criterionId, value])
   @@map("sub_criteria")
@@ -150,12 +150,12 @@ model SubCriteria {
 
 // Alternative model - alternatives to be evaluated
 model Alternative {
-  id    String @id @default(uuid())
-  spkId String
-  name  String
+  alternativeId String @id @default(uuid()) @map("alternative_id")
+  spkId         String @map("spk_id")
+  name          String @map("name")
 
   // Relations
-  spkRecord         SPKRecord          @relation(fields: [spkId], references: [id], onDelete: Cascade)
+  spkRecord         SPKRecord          @relation(fields: [spkId], references: [spkId], onDelete: Cascade)
   alternativeValues AlternativeValue[]
   sawResults        SAWResult[]
   wpResults         WPResult[]
@@ -165,14 +165,14 @@ model Alternative {
 
 // Alternative values for each criterion
 model AlternativeValue {
-  id            String @id @default(uuid())
-  alternativeId String
-  criterionId   String
-  value         Float
+  alternativeValueId String @id @default(uuid()) @map("alternative_value_id")
+  alternativeId      String @map("alternative_id")
+  criterionId        String @map("criterion_id")
+  value              Float  @map("value")
 
   // Relations
-  alternative Alternative @relation(fields: [alternativeId], references: [id], onDelete: Cascade)
-  criterion   Criterion   @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  alternative Alternative @relation(fields: [alternativeId], references: [alternativeId], onDelete: Cascade)
+  criterion   Criterion   @relation(fields: [criterionId], references: [criterionId], onDelete: Cascade)
 
   @@unique([alternativeId, criterionId])
   @@map("alternative_values")
@@ -180,15 +180,15 @@ model AlternativeValue {
 
 // SAW (Simple Additive Weighting) Results
 model SAWResult {
-  id            String @id @default(uuid())
-  spkId         String
-  alternativeId String
-  score         Float
-  rank          Int
+  sawResultId   String @id @default(uuid()) @map("saw_result_id")
+  spkId         String @map("spk_id")
+  alternativeId String @map("alternative_id")
+  score         Float  @map("score")
+  rank          Int    @map("rank")
 
   // Relations
-  spkRecord   SPKRecord   @relation(fields: [spkId], references: [id], onDelete: Cascade)
-  alternative Alternative @relation(fields: [alternativeId], references: [id], onDelete: Cascade)
+  spkRecord   SPKRecord   @relation(fields: [spkId], references: [spkId], onDelete: Cascade)
+  alternative Alternative @relation(fields: [alternativeId], references: [alternativeId], onDelete: Cascade)
 
   @@unique([spkId, alternativeId])
   @@map("saw_results")
@@ -196,15 +196,15 @@ model SAWResult {
 
 // WP (Weighted Product) Results
 model WPResult {
-  id            String @id @default(uuid())
-  spkId         String
-  alternativeId String
-  score         Float
-  rank          Int
+  wpResultId    String @id @default(uuid()) @map("wp_result_id")
+  spkId         String @map("spk_id")
+  alternativeId String @map("alternative_id")
+  score         Float  @map("score")
+  rank          Int    @map("rank")
 
   // Relations
-  spkRecord   SPKRecord   @relation(fields: [spkId], references: [id], onDelete: Cascade)
-  alternative Alternative @relation(fields: [alternativeId], references: [id], onDelete: Cascade)
+  spkRecord   SPKRecord   @relation(fields: [spkId], references: [spkId], onDelete: Cascade)
+  alternative Alternative @relation(fields: [alternativeId], references: [alternativeId], onDelete: Cascade)
 
   @@unique([spkId, alternativeId])
   @@map("wp_results")
